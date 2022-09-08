@@ -6,20 +6,20 @@ void initializeStorage(Preferences* preferences);
 
 bool isFirstRun(Preferences* preferences);
 
-void saveSwitchState(Preferences* preferences, std::string value);
+void saveSwitchState(Preferences* preferences, uint8_t value[], int valueSize);
 
-void saveAnimationState(Preferences* preferences, std::string value);
+void saveAnimationState(Preferences* preferences, uint8_t value[], int valueSize);
 
-void saveChannelDetailState(Preferences* preferences, int index, std::string value);
+void saveChannelDetailState(Preferences* preferences, int index, uint8_t value[], int valueSize);
 
-void saveChannelLocationState(Preferences* preferences, int index, uint8_t value[]);
+void saveChannelLocationState(Preferences* preferences, int index, uint8_t value[], int valueSize);
 
-std::string loadSwitchState(Preferences* preferences);
+bool loadSwitchState(Preferences* preferences, uint8_t value[], int valueSize);
 
-std::string loadAnimationState(Preferences* preferences);
+bool loadAnimationState(Preferences* preferences, uint8_t value[], int valueSize);
 
-std::string loadChannelDetailState(Preferences* preferences, int index);
+bool loadChannelDetailState(Preferences* preferences, int index, uint8_t value[], int valueSize);
 
-void loadChannelLocationState(Preferences* preferences, int index, uint8_t value[]);
+bool loadChannelLocationState(Preferences* preferences, int index, uint8_t value[], int valueSize);
 
 #endif

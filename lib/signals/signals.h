@@ -1,6 +1,7 @@
 #ifndef SIGNALS_H
 #define SIGNALS_H
 #include <Arduino.h>
+#include <bluetooth.h>
 #include <channels.h>
 #include <animations.h>
 #include <location.h>
@@ -17,6 +18,7 @@ struct State {
   ChannelState channels[MAX_CHANNELS];
   LocationState location;
   Preferences preferences;
+  BluetoothState bluetooth;
 };
 
 void createSignals(State* state, TaskHandle_t* handle);

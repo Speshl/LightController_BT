@@ -113,31 +113,127 @@ bool isActiveWithSpecialCases(ChannelState* channel, SwitchState* switches){
   return isActive(channel);
 }
 
-std::string getStateAsString(ChannelState channels[MAX_CHANNELS], int i){
-  //Serial.println("Getting channel state from string");
-  std::string returnValue = "";
-  std::string builderString = "";
-  builderString += channels[i].enabled;
-  builderString += channels[i].interior;
-  builderString += channels[i].directionFlipped;
-  builderString += channels[i].leftTurn;
-  builderString += channels[i].rightTurn;
-  builderString += channels[i].brake;
-  builderString += channels[i].reverse;
-  builderString += channels[i].type;
-  builderString += channels[i].order;
+void getStateAsJson(ChannelState* channel, JsonObject doc, int index){
+  char indexBuffer[5];
+  itoa(index, indexBuffer,10);
+  std::string indexString(indexBuffer);
+  doc["enabled"+indexString] = channel->enabled;
+  doc["interior"+indexString] = channel->interior;
+  doc["directionFlipped"+indexString] = channel->directionFlipped;
+  doc["leftTurn"+indexString] = channel->leftTurn;
+  doc["rightTurn"+indexString] = channel->rightTurn;
+  doc["brake"+indexString] = channel->brake;
+  doc["reverse"+indexString] = channel->reverse;
+  doc["type"+indexString] = channel->type;
+  doc["order"+indexString] = channel->order;
+  doc["numLEDs"+indexString] = channel->numLEDs;
+}
+
+void setStateFromJson(ChannelState* channel, JsonObject doc, int index){
+  char indexBuffer[5];
+  itoa(index, indexBuffer,10);
+  std::string indexString(indexBuffer);
+
+  channel->enabled = doc["enabled"+indexString];
+  channel->interior = doc["interior"+indexString];
+  channel->directionFlipped = doc["directionFlipped"+indexString];
+  channel->leftTurn = doc["leftTurn"+indexString];
+  channel->rightTurn = doc["rightTurn"+indexString];
+  channel->brake = doc["brake"+indexString];
+  channel->reverse = doc["reverse"+indexString];
+  channel->type = doc["type"+indexString];
+  channel->order = doc["order"+indexString];
+  channel->numLEDs = doc["numLEDs"+indexString];
+}
+
+void getStateAsBytes(ChannelState * channel, uint8_t state[CHANNEL_STATE_LENGTH]){
+  state[0] = channel->enabled;
+  state[1] = channel->interior;
+  state[2] = channel->directionFlipped;
+  state[3] = channel->leftTurn;
+  state[4] = channel->rightTurn;
+  state[5] = channel->brake;
+  state[6] = channel->reverse;
+  state[7] = channel->type;
+  state[8] = channel->order;
   
   ChannelsConversion converter;
-  converter.wordValue = channels[i].numLEDs;
+  converter.wordValue = channel->numLEDs;
+  state[9] = converter.byteValue[0];
+  state[10] = converter.byteValue[1];
+}
+
+void getStateAsBytes(ChannelState channels[MAX_CHANNELS], int i, uint8_t state[CHANNEL_STATE_LENGTH]){
+  //Serial.println("Getting channel state from string");
+  getStateAsBytes(&channels[i],state);
+}
+
+std::string getStateAsString(ChannelState * channel){
+  std::string returnValue = "";
+  std::string builderString = "";
+  builderString += channel->enabled;
+  builderString += channel->interior;
+  builderString += channel->directionFlipped;
+  builderString += channel->leftTurn;
+  builderString += channel->rightTurn;
+  builderString += channel->brake;
+  builderString += channel->reverse;
+  builderString += channel->type;
+  builderString += channel->order;
+  
+  ChannelsConversion converter;
+  converter.wordValue = channel->numLEDs;
   builderString += converter.charValue[0];
   builderString += converter.charValue[1];    
   returnValue.append(builderString);
   return returnValue;
 }
 
-void setStateFromString(ChannelState channels[MAX_CHANNELS],int i, std::string inputValue){
+std::string getStateAsString(ChannelState channels[MAX_CHANNELS], int i){
+  //Serial.println("Getting channel state from string");
+  return getStateAsString(&channels[i]);
+}
+
+void setStateFromBytes(ChannelState * channel, uint8_t state [CHANNEL_STATE_LENGTH]){
+  int currentPos = 0;
+  bool newTypeFound = false;
+
+  channel->enabled = state[0];
+  channel->interior = state[1];
+  channel->directionFlipped = state[2];
+  channel->leftTurn = state[3];
+  channel->rightTurn = state[4];
+  channel->brake = state[5];
+  channel->reverse = state[6];
+
+  char newType = state[7];
+  if(newType != channel->type){
+    channel->type = newType;
+    newTypeFound = true;
+  }
+
+  channel->order = state[8];
+
+  ChannelsConversion converter;
+  converter.byteValue[0] = state[9];
+  converter.byteValue[1] = state[10];
+  channel->numLEDs = converter.wordValue;
+}
+
+void setStateFromBytes(ChannelState channels[MAX_CHANNELS],int i, uint8_t state [CHANNEL_STATE_LENGTH]){
   //Serial.println("Setting channel state from string");
-  if (inputValue.length() < CHANNEL_SIZE){
+  setStateFromBytes(&channels[i], state);
+
+  if(channels[i].enabled == true && channels[i].controller == NULL){
+    getDefinition(&(channels[i]), i); //Get a controller where one didn't already exist
+  }
+  clear(channels);
+  //Serial.println("Showing All after state from string update for channels");
+  showAll(channels);
+}
+
+void setStateFromString(ChannelState * channel, std::string inputValue){
+if (inputValue.length() < CHANNEL_SIZE){
     Serial.print("Invalid string used to set Channel State (Length: ");
     Serial.print(inputValue.length());
     Serial.print(") : ");
@@ -147,66 +243,69 @@ void setStateFromString(ChannelState channels[MAX_CHANNELS],int i, std::string i
   int currentPos = 0;
   bool newTypeFound = false;
 
-  channels[i].enabled = inputValue[currentPos];
-  channels[i].interior = inputValue[currentPos+1];
-  channels[i].directionFlipped = inputValue[currentPos+2];
-  channels[i].leftTurn = inputValue[currentPos+3];
-  channels[i].rightTurn = inputValue[currentPos+4];
-  channels[i].brake = inputValue[currentPos+5];
-  channels[i].reverse = inputValue[currentPos+6];
+  channel->enabled = inputValue[currentPos];
+  channel->interior = inputValue[currentPos+1];
+  channel->directionFlipped = inputValue[currentPos+2];
+  channel->leftTurn = inputValue[currentPos+3];
+  channel->rightTurn = inputValue[currentPos+4];
+  channel->brake = inputValue[currentPos+5];
+  channel->reverse = inputValue[currentPos+6];
 
   char newType = inputValue[currentPos+7];
-  if(newType != channels[i].type){
-    channels[i].type = newType;
+  if(newType != channel->type){
+    channel->type = newType;
     newTypeFound = true;
   }
 
-  channels[i].order = inputValue[currentPos+8];
+  channel->order = inputValue[currentPos+8];
 
   ChannelsConversion converter;
   converter.charValue[0] = inputValue[currentPos+9];
   converter.charValue[1] = inputValue[currentPos+10];
-  channels[i].numLEDs = converter.wordValue;
-  
-  if(channels[i].enabled == true){
-    if(channels[i].controller == NULL){
-      getDefinition(&(channels[i]), i); //Get a controller where one didn't already exist
-    }else{
-      if(newTypeFound){
-        channels[i].restartRequired = true; //if new type is found then must restart controller before it will work
-      }
-    }
+  channel->numLEDs = converter.wordValue;
+}
+
+void setStateFromString(ChannelState channels[MAX_CHANNELS],int i, std::string inputValue){
+  //Serial.println("Setting channel state from string");
+  setStateFromString(&channels[i], inputValue);
+
+  if(channels[i].enabled == true && channels[i].controller == NULL){
+    getDefinition(&(channels[i]), i); //Get a controller where one didn't already exist
   }
   clear(channels);
   //Serial.println("Showing All after state from string update for channels");
   showAll(channels);
 }
 
+void describeState(ChannelState channels[MAX_CHANNELS], int index){
+  Serial.print("Describing Channel :");
+  Serial.println(index);
+  Serial.print("Enabled: ");
+  Serial.println((uint8_t) channels[index].enabled);//So it displays as number
+  Serial.print("Interior: ");
+  Serial.println((uint8_t) channels[index].interior);//So it displays as number
+  Serial.print("DirectionFlipped: ");
+  Serial.println((uint8_t) channels[index].directionFlipped);//So it displays as number
+  Serial.print("LeftTurn: ");
+  Serial.println((uint8_t) channels[index].leftTurn);//So it displays as number
+  Serial.print("RightTurn: ");
+  Serial.println((uint8_t) channels[index].rightTurn);//So it displays as number
+  Serial.print("Brake: ");
+  Serial.println((uint8_t) channels[index].brake);//So it displays as number
+  Serial.print("Reverse: ");
+  Serial.println((uint8_t) channels[index].reverse);//So it displays as number
+  Serial.print("Type: ");
+  Serial.println((uint8_t) channels[index].type);//So it displays as number
+  Serial.print("Order: ");
+  Serial.println((uint8_t) channels[index].order);//So it displays as number 
+  Serial.print("NumLEDs: ");
+  Serial.println(channels[index].numLEDs);
+}
+
 void describeState(ChannelState channels[MAX_CHANNELS]){
   Serial.println("Describing Channels State - ");
   for(int i=0; i<MAX_CHANNELS; i++){
-    Serial.print("Describing Channel :");
-    Serial.println(i);
-    Serial.print("Enabled: ");
-    Serial.println((uint8_t) channels[i].enabled);//So it displays as number
-    Serial.print("Interior: ");
-    Serial.println((uint8_t) channels[i].interior);//So it displays as number
-    Serial.print("DirectionFlipped: ");
-    Serial.println((uint8_t) channels[i].directionFlipped);//So it displays as number
-    Serial.print("LeftTurn: ");
-    Serial.println((uint8_t) channels[i].leftTurn);//So it displays as number
-    Serial.print("RightTurn: ");
-    Serial.println((uint8_t) channels[i].rightTurn);//So it displays as number
-    Serial.print("Brake: ");
-    Serial.println((uint8_t) channels[i].brake);//So it displays as number
-    Serial.print("Reverse: ");
-    Serial.println((uint8_t) channels[i].reverse);//So it displays as number
-    Serial.print("Type: ");
-    Serial.println((uint8_t) channels[i].type);//So it displays as number
-    Serial.print("Order: ");
-    Serial.println((uint8_t) channels[i].order);//So it displays as number 
-    Serial.print("NumLEDs: ");
-    Serial.println(channels[i].numLEDs);
+    describeState(channels, i);
   }
 }
 
@@ -309,63 +408,7 @@ void setInitialState(ChannelState channels[MAX_CHANNELS]){
   Serial.println("Finished Setting Initial channel State");
 }
 
-std::string getChannelEnabled(ChannelState* channel){
-  if(channel->enabled){
-    return "checked=true";
-  }else{
-    return "";
-  }
-}
-
-std::string getChannelInterior(ChannelState* channel){
-  if(channel->interior){
-    return "checked=true";
-  }else{
-    return "";
-  }
-}
-
-std::string getChannelDirectionFlipped(ChannelState* channel){
-  if(channel->directionFlipped){
-    return "checked=true";
-  }else{
-    return "";
-  }
-}
-
-std::string getChannelLeftTurn(ChannelState* channel){
-  if(channel->leftTurn){
-    return "checked=true";
-  }else{
-    return "";
-  }
-}
-
-std::string getChannelRightTurn(ChannelState* channel){
-  if(channel->rightTurn){
-    return "checked=true";
-  }else{
-    return "";
-  }
-}
-
-std::string getChannelBrake(ChannelState* channel){
-  if(channel->brake){
-    return "checked=true";
-  }else{
-    return "";
-  }
-}
-
-std::string getChannelReverse(ChannelState* channel){
-  if(channel->reverse){
-    return "checked=true";
-  }else{
-    return "";
-  }
-}
-
-std::string getChannelType(ChannelState* channel){
+/*std::string getChannelType(ChannelState* channel){
   char buffer[10];
   return itoa(channel->type,buffer, 10);
 }
@@ -378,7 +421,7 @@ std::string getChannelOrder(ChannelState* channel){
 std::string getChannelNumLEDs(ChannelState* channel){
  char buffer[10];
   return itoa(channel->numLEDs,buffer, 10);
-}
+}*/
 
 
 

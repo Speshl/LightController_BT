@@ -7,10 +7,10 @@
             grid-template-columns: auto 400px auto;
         }
 
-        .options-grid {
+        .switch-grid {
             display: grid;
-            grid-template-columns: 100px 100px;
-            width: 200px;
+            grid-template-columns: 100px 100px 100px;
+            width: 300px;
             margin: auto;
             gap: 5px;
             padding-top: 10px;
@@ -24,9 +24,19 @@
         .middle-column {
             text-align: center;
         }
+
+        .on-text {
+            font-weight: bold;
+            color: limegreen;
+        }
+
+        .off-text {
+            font-weight: bold;
+            color:red;
+        }
     </style>
 </head>
-<body>
+<body style="background-color:black;">
     <div class="page-grid">
     <div class="left-column">
         <input type="button" value="Back" onclick="history.back()">
@@ -36,26 +46,49 @@
             <input type="submit" value="Home">
         </form>
         <H2>Switches</H2>
-        <form action="/switches" method="post" class="options-grid">
-            <label for="leftTurn">Left Turn:</label>
-            <input type="checkbox" id="leftTurn" name="leftTurn" value=true %REPLACE_SWITCH_LEFTTURN%>
-            <label for="rightTurn">Right Turn:</label>
-            <input type="checkbox" id="rightTurn" name="rightTurn" value=true %REPLACE_SWITCH_RIGHTTURN%>
-            <label for="Reverse"class="left-column">Reverse:</label>
-            <input type="checkbox" id="Reverse" name="Reverse" value=true %REPLACE_SWITCH_REVERSE%>
-            <label for="Brake"class="left-column">Brake:</label>
-            <input type="checkbox" id="Brake" name="Brake" value=true %REPLACE_SWITCH_BRAKE%>
-            <label for="Interior"class="left-column">Interior:</label>
-            <input type="checkbox" id="Interior" name="Interior" value=true %REPLACE_SWITCH_INTERIOR%>
-            <label for="UIOverride">UIOverride:</label>
-            <input type="checkbox" id="UIOverride" name="UIOverride" value=true %REPLACE_SWITCH_UIOVERRIDE%>
-            <div></div>
-            <input type="submit" value="Update">
-        </form>
-        <div>
-            <form action="/save" method="post">
-                <input type="submit" value="Write Changes"> 
-            </form>
+        <div class="switch-grid">
+            <div>
+                <label for="LEFT_TURN_SWITCH" class="%LEFT_TURN_TEXT%">Left Turn</label>
+                <form action="/switches" method="post">
+                    <input type="hidden" name="LEFT_TURN_SWITCH" value="%LEFT_TURN_SWITCH%">
+                    <input type="image" src="%LEFT_TURN_IMG%" alt="%LEFT_TURN_SWITCH%">
+                </form>
+            </div>
+            <div>
+                <label for="RIGHT_TURN_SWITCH" class="%RIGHT_TURN_TEXT%">Right Turn</label>
+                <form action="/switches" method="post">
+                    <input type="hidden" name="RIGHT_TURN_SWITCH" value="%RIGHT_TURN_SWITCH%">
+                    <input type="image" src="%RIGHT_TURN_IMG%" alt="%RIGHT_TURN_SWITCH%">
+                </form>
+            </div>
+            <div>
+                <label for="BRAKE_SWITCH" class="%BRAKE_TEXT%">Brake</label>
+                <form action="/switches" method="post">
+                    <input type="hidden" name="BRAKE_SWITCH" value="%BRAKE_SWITCH%">
+                    <input type="image" src="%BRAKE_IMG%" alt="%BRAKE_SWITCH%">
+                </form>
+            </div>
+            <div>
+                <label for="REVERSE_SWITCH" class="%REVERSE_TEXT%">Reverse</label>
+                <form action="/switches" method="post">
+                    <input type="hidden" name="REVERSE_SWITCH" value="%REVERSE_SWITCH%">
+                    <input type="image" src="%REVERSE_IMG%" alt="%REVERSE_SWITCH%">
+                </form>
+            </div>
+            <div>
+                <label for="INTERIOR_SWITCH" class="%INTERIOR_TEXT%">Interior</label>
+                <form action="/switches" method="post">
+                    <input type="hidden" name="INTERIOR_SWITCH" value="%INTERIOR_SWITCH%">
+                    <input type="image" src="%INTERIOR_IMG%" alt="%INTERIOR_SWITCH%">
+                </form>
+            </div>
+            <div>
+                <label for="UI_OVERRIDE_SWITCH" class="%UI_OVERRIDE_TEXT%">UI Override</label>
+                <form action="/switches" method="post">
+                    <input type="hidden" name="UI_OVERRIDE_SWITCH" value="%UI_OVERRIDE_SWITCH%">
+                    <input type="image" src="%UI_OVERRIDE_IMG%" alt="%UI_OVERRIDE_SWITCH%">
+                </form>
+            </div>
         </div>
     </div>
 </div>

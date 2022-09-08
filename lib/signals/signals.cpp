@@ -24,15 +24,18 @@ void signalTask(void *pvParameters){
 
       //brake light is next highest importance
       if(state->switches.brake){
+        Serial.println("Brake ON");
         brakeAnimation(state->channels, &state->switches);
       }
       
       //turn signals are highest priority because they are intermittent and will default back to other signal if applicable
       if(state->switches.leftTurn){
+        Serial.println("Left Turn ON");
         leftTurnAnimationWithColor(state->channels, &state->switches, CRGB::Orange); 
       }
 
       if(state->switches.rightTurn){
+        Serial.println("Right Turn ON");
         rightTurnAnimationWithColor(state->channels, &state->switches, CRGB::Orange);
       }
 
@@ -44,10 +47,12 @@ void signalTask(void *pvParameters){
 
       //Set turn signals back to off
       if(state->switches.leftTurn){
+        Serial.println("Left Turn OFF");
         leftTurnAnimationWithColor(state->channels, &state->switches, CRGB::Black); 
       }
 
       if(state->switches.rightTurn){
+        Serial.println("Right Turn OFF");
         rightTurnAnimationWithColor(state->channels, &state->switches, CRGB::Black);
       }
       //turn any turn signal back to to reverse color if they overlapped

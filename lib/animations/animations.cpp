@@ -26,13 +26,118 @@ void setInitialState(AnimationState* animation){
   Serial.println("Finished setting Initial Animation State");
 }
 
+void setStateFromBytes(AnimationState* animation, uint8_t state[ANIMATION_STATE_LENGTH]){
+  animation->animation = state[0];
+  animation->palettePreset = state[1];
+  animation->brightness = state[2];
+  animation->stepSize = state[3];
+
+  switch(state[4]){
+    case 0:
+      animation->blending = NOBLEND;
+      break;
+    case 1:
+      animation->blending = LINEARBLEND;
+      break;
+    default:
+      animation->blending = LINEARBLEND;
+  }
+
+  animation->fps = state[5];
+
+  for(int i=0; i<MAX_COLORS*4; i++){
+    animation->paletteDescription[i] = state[i+6];
+  }
+  if(animation->stepSize == 0){
+    animation->stepSize = 1;
+  }
+  if(animation->fps == 0){
+    animation->fps = 1;
+  }
+  if(animation->brightness == 0){
+    animation->brightness = 1;
+  }
+}
+
+void getStateAsBytes(AnimationState* animation, uint8_t state[ANIMATION_STATE_LENGTH]){
+  state[0] = animation->animation;
+  state[1] = animation->palettePreset;
+  state[2] = animation->brightness;
+  state[3] = animation->stepSize;
+
+  switch(animation->blending){
+    case NOBLEND:
+      state[4] = 0;
+      break;
+    case LINEARBLEND:
+      state[4] = 1;
+      break;
+    default:
+      state[4] = 1;
+  }
+
+  state[5] = animation->fps;
+
+  for(int i=0; i<MAX_COLORS*4; i++){
+    state[i+6] = animation->paletteDescription[i];
+  }
+}
+
+void setStateFromJson(AnimationState* animation, JsonObject doc){
+  animation->animation = doc["animation"];
+  animation->palettePreset = doc["palettePreset"];
+  animation->brightness = doc["brightness"];
+  animation->stepSize = doc["stepSize"];
+  animation->blending = doc["blending"];
+  animation->fps = doc["fps"];
+
+  for(int i=0; i< MAX_COLORS*4; i++){
+    animation->paletteDescription[i] = doc["paletteDescription"][i];
+  }
+
+  if(animation->stepSize == 0){
+    animation->stepSize = 1;
+  }
+  if(animation->fps == 0){
+    animation->fps = 1;
+  }
+  if(animation->brightness == 0){
+    animation->brightness = 1;
+  }
+}
+
+void getStateAsJson(AnimationState* animation, JsonObject doc){
+  char buffer[10];
+
+  doc["animation"] = animation->animation;
+  doc["palettePreset"] = animation->palettePreset;
+  doc["brightness"] = animation->brightness;
+  doc["stepSize"] = animation->stepSize;
+
+  switch(animation->blending){
+    case NOBLEND:
+      doc["blending"] = 0;
+      break;
+    case LINEARBLEND:
+      doc["blending"] = 1;
+      break;
+    default:
+      doc["blending"] = 1;
+  }
+
+  doc["fps"] = animation->fps;
+
+  for(int i=0; i< MAX_COLORS*4; i++){
+    doc["paletteDescription"][i] = animation->paletteDescription[i];
+  }
+}
+
 std::string getStateAsString(AnimationState* animation){
   std::string returnValue = "";
   returnValue += animation->animation;
   returnValue += animation->palettePreset;
   returnValue += animation->brightness;
   returnValue += animation->stepSize;
-
   switch(animation->blending){
     case NOBLEND:
       returnValue += '0';
@@ -43,12 +148,7 @@ std::string getStateAsString(AnimationState* animation){
     default:
       returnValue += '1';
   }
-  
 
-  /*AnimationConversion converter;
-  converter.wordValue = animation->stepDelay;
-  returnValue += converter.charValue[0];
-  returnValue += converter.charValue[1];*/
   returnValue += animation->fps;
 
   /*Save palette*/
@@ -76,10 +176,6 @@ void setStateFromString(AnimationState* animation, std::string input){
       animation->blending = LINEARBLEND;
   }
   
-  /*AnimationConversion converter;
-  converter.charValue[0] = input[5];
-  converter.charValue[1] = input[6];
-  animation->stepDelay = converter.wordValue;*/
   animation->fps = input[5];
 
   /*Read palette*/
@@ -91,43 +187,42 @@ void setStateFromString(AnimationState* animation, std::string input){
   switch(animation->palettePreset){
     case 0:
       animation->palette.loadDynamicGradientPalette(tempPalette);
-      Serial.println("Using Custom Palette");
       break;
     case 1:
       animation->palette = RainbowColors_p;
-      Serial.println("Using Rainbow Palette");
       break;
     case 2:
       animation->palette = RainbowStripeColors_p;
-      Serial.println("Using RainbowStrip Palette");
       break;
     case 3:
       animation->palette = PartyColors_p;
-      Serial.println("Using Party Palette");
       break;
     case 4:
       animation->palette = LavaColors_p;
-      Serial.println("Using Lava Palette");
       break;
     case 5:
       animation->palette = HeatColors_p;
-      Serial.println("Using Heat Palette");
       break;
     case 6:
       animation->palette = CloudColors_p;
-      Serial.println("Using Cloud Palette");
       break;
     case 7:
       animation->palette = OceanColors_p;
-      Serial.println("Using Ocean Palette");
       break;
     case 8:
       animation->palette = ForestColors_p;
-      Serial.println("Using Forest Palette");
       break;
     default:
       animation->palette = RainbowColors_p;
-      Serial.println("Using DEFAULT Palette");
+  }
+  if(animation->stepSize == 0){
+    animation->stepSize = 1;
+  }
+  if(animation->fps == 0){
+    animation->fps = 1;
+  }
+  if(animation->brightness == 0){
+    animation->brightness = 1;
   }
 }
 
@@ -430,27 +525,19 @@ void spinClockwisePalette(AnimationState* animation, ChannelState channels[MAX_C
 }
 
 void brakeAnimation(ChannelState channels[MAX_CHANNELS], SwitchState* switches){
-  Serial.println("Start Brake Animation");
   fillBrake(channels, CRGB::Red);
-  Serial.println("Finished Brake Animation");
 }
 
 void reverseAnimation(ChannelState channels[MAX_CHANNELS], SwitchState* switches){
-  Serial.println("Start Reverse Animation");
   fillReverse(channels, CRGB::White);
-  Serial.println("Finished Reverse Animation");
 }
 
 void leftTurnAnimationWithColor(ChannelState channels[MAX_CHANNELS], SwitchState* switches, CRGB color){
-  Serial.println("Starting Left Turn Animation");
   fillLeftTurn(channels, color);
-  Serial.println("Finished Left Turn Animation");
 }
 
 void rightTurnAnimationWithColor(ChannelState channels[MAX_CHANNELS], SwitchState* switches, CRGB color){
-  Serial.println("Start Right Turn Animation");
   fillRightTurn(channels, color);
-  Serial.println("Finished Right Turn Animation");
 }
 
 uint16_t getStepDelay(AnimationState* animation, uint16_t frameTime){

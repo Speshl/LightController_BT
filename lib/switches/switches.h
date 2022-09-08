@@ -1,6 +1,7 @@
 #ifndef SWITCHES_H
 #define SWITCHES_H
 #include <Arduino.h>
+#include <ArduinoJson.h>
 
 //TODO: Define actual pins
 #define LEFT_TURN_PIN 1
@@ -20,15 +21,25 @@ struct SwitchState {
     bool uiOverride;
 };
 
+void initializeSwitches(SwitchState* switches);
+
 bool getSwitchState(int pin);
 
 bool updateSwitchState(SwitchState* switches); //Switch state will become dominant when this is called
+
+void getStateAsBytes(SwitchState* switches, uint8_t state[SWITCH_STATE_LENGTH]);
+
+void setStateFromBytes(SwitchState* switches, uint8_t state[SWITCH_STATE_LENGTH]);
 
 std::string getStateAsString(SwitchState* switches);
 
 void setStateFromString(SwitchState* switches, std::string inputValue);
 
 void describeState(SwitchState* switches);
+
+void getStateAsJson(SwitchState* switches, JsonObject doc);
+
+void setStateFromJson(SwitchState* switches, JsonObject doc);
 
 std::string getLeftTurn(SwitchState* switches);
 std::string getRightTurn(SwitchState* switches);

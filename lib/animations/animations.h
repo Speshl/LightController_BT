@@ -6,6 +6,7 @@
 #include <channels.h>
 #include <location.h>
 #include "string"
+#include <ArduinoJson.h>
 
 
 #define ANIMATION_STATE_LENGTH 46
@@ -39,9 +40,17 @@ union AnimationConversion {
 
 void setInitialState(AnimationState* animation);
 
+void setStateFromBytes(AnimationState* animation, uint8_t state[ANIMATION_STATE_LENGTH]);
+
+void getStateAsBytes(AnimationState* animation, uint8_t state[ANIMATION_STATE_LENGTH]);
+
 std::string getStateAsString(AnimationState* animation);
 
 void setStateFromString(AnimationState* animation, std::string input);
+
+void getStateAsJson(AnimationState* animation, JsonObject doc);
+
+void setStateFromJson(AnimationState* animation, JsonObject doc);
 
 void describeState(AnimationState* animation);
 

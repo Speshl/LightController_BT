@@ -102,7 +102,7 @@ void shiftColorDownRow(LocationState* state, ChannelState channels[MAX_CHANNELS]
 
 void shiftColorDownHeight(LocationState* state, ChannelState channels[MAX_CHANNELS], CRGB color);
 
-void getChannelLocations(LocationState* state, uint8_t channel, uint8_t maxPos, uint8_t locations[]);
+void getChannelLocations(LocationState* state, uint8_t channel, uint8_t locations[MAX_LEDS*3]);
 void getChannelLocationAtPosition(LocationState* state, uint8_t channel, uint8_t pos, uint8_t *x, uint8_t *y, uint8_t *z);
 void getChannelLocationAtPosition(LocationState* state, uint8_t channel, uint8_t pos, std::string* row, std::string* col, std::string* height);
 

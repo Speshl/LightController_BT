@@ -855,8 +855,8 @@ void setChannelLocations(LocationState* state, uint8_t channel, uint8_t maxPos, 
   }
 }
 
-void getChannelLocations(LocationState* state, uint8_t channel, uint8_t maxPos, uint8_t locations[]){
-  for(int i=0; i<maxPos; i++){
+void getChannelLocations(LocationState* state, uint8_t channel, uint8_t locations[MAX_LEDS*3]){
+  for(int i=0; i<MAX_LEDS; i++){
     int offset = i * 3;
     uint8_t x = 0;
     uint8_t y = 0;
@@ -882,6 +882,9 @@ void getChannelLocationAtPosition(LocationState* state, uint8_t channel, uint8_t
       currentLocation = currentLocation->nextRow;
     }
   }
+  *x = 0;
+  *y = 0;
+  *z = 0;
   return;
 }
 

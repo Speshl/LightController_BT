@@ -6,11 +6,15 @@
 #include <animations.h>
 #include <storage.h>
 #include <signals.h>
+#include <messagequeue.h>
 #include <ESPmDNS.h>
 #include <WiFi.h>
 #include <DNSServer.h>
 #include <ESPAsyncWebServer.h>
 #include <SPIFFS.h>
+#include <ArduinoJson.h>
+#include <AsyncJson.h>
+
 
 #define AP_SSID "LightControllerConfig"
 #define AP_PASS "password"
@@ -20,12 +24,13 @@
 static DNSServer dnsServer;
 static AsyncWebServer server(80);
 static short clientsConnected = 0;
-
-static State* globalState;
+static uint8_t uploadBuffer[1024*14];
 
 void initializeAP(State* state);
 
 void OnWiFiEvent(WiFiEvent_t event);
+
+String utilsProcessor(const String& var);
 
 String viewProcessor(const String& var);
 

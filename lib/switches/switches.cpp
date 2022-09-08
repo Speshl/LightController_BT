@@ -1,5 +1,15 @@
 #include "switches.h"
 
+void initializeSwitches(SwitchState * switches){
+  switches->leftTurn = false;
+  switches->rightTurn = false;
+  switches->brake = false;
+  switches->reverse = false;
+  switches->interior = false;
+  switches->leftTurn = false;
+  //switches->uiOverrideSwitch = false;
+}
+
 bool getSwitchState(int pin){
   if(digitalRead(pin) == HIGH){//Switch is considered on when + signal is applied
     return true;//TODO: SET BACK TO FALSE
@@ -50,6 +60,42 @@ bool updateSwitchState(SwitchState* switches){
   //Serial.println("Finished Updating Switch State");
   return updated;*/
   return false;
+}
+
+void getStateAsJson(SwitchState* switches, JsonObject doc){
+  doc["leftTurnSwitch"] = switches->leftTurn;
+  doc["rightTurnSwitch"] = switches->rightTurn;
+  doc["brakeSwitch"] = switches->brake;
+  doc["reverseSwitch"] = switches->reverse;
+  doc["interiorSwitch"] = switches->interior;
+  doc["uiOverrideSwitch"] = switches->uiOverride;
+}
+
+void setStateFromJson(SwitchState* switches, JsonObject doc){
+  switches->leftTurn = doc["leftTurnSwitch"];
+  switches->rightTurn = doc["rightTurnSwitch"];
+  switches->brake = doc["brakeSwitch"];
+  switches->reverse = doc["reverseSwitch"];
+  switches->interior = doc["interiorSwitch"];
+  switches->uiOverride = doc["uiOverrideSwitch"];
+}
+
+void getStateAsBytes(SwitchState* switches, uint8_t state[SWITCH_STATE_LENGTH]){
+  state[0] = switches->leftTurn;
+  state[1] = switches->rightTurn;
+  state[2] = switches->brake;
+  state[3] = switches->reverse;
+  state[4] = switches->interior;
+  state[5] = switches->uiOverride;
+}
+
+void setStateFromBytes(SwitchState* switches, uint8_t state[SWITCH_STATE_LENGTH]){
+  switches->leftTurn = state[0];
+  switches->rightTurn = state[1];
+  switches->brake = state[2];
+  switches->reverse = state[3];
+  switches->interior = state[4];
+  switches->uiOverride = state[5];
 }
 
 std::string getStateAsString(SwitchState* switches){

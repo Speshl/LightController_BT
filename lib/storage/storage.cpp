@@ -22,88 +22,66 @@ bool isFirstRun(Preferences* preferences){
   return firstRun;
 }
 
-void saveSwitchState(Preferences* preferences, std::string value){
-  byte tempData[value.length()];
-  for(int i=0; i<value.length(); i++){
-    tempData[i] = value[i];
-  }
-  preferences->putBytes("Switch", tempData, value.length());
+void saveSwitchState(Preferences* preferences, uint8_t value[], int valueSize){
+  preferences->putBytes("Switch", value, valueSize);
 }
 
-void saveAnimationState(Preferences* preferences, std::string value){
-  byte tempData[value.length()];
-  for(int i=0; i<value.length(); i++){
-    tempData[i] = value[i];
-  }
-  preferences->putBytes("Animation", tempData, value.length());
+void saveAnimationState(Preferences* preferences, uint8_t value[], int valueSize){
+  preferences->putBytes("Animation", value, valueSize);
 }
 
-void saveChannelDetailState(Preferences* preferences, int index, std::string value){
+void saveChannelDetailState(Preferences* preferences, int index, uint8_t value[], int valueSize){
   char numstr[21];
   std::string temp = itoa(index, numstr, 10);
   std::string key = "Detail" + temp;
-
-  byte tempData[value.length()];
-  for(int i=0; i<value.length(); i++){
-    tempData[i] = value[i];
-  }
-  preferences->putBytes(key.c_str(), &tempData, value.length());
+  preferences->putBytes(key.c_str(), value, valueSize);
 }
 
-void saveChannelLocationState(Preferences* preferences, int index, uint8_t value[]){
+void saveChannelLocationState(Preferences* preferences, int index, uint8_t value[], int valueSize){
   char numstr[21];
   std::string temp = itoa(index, numstr, 10);
   std::string key = "Loc" + temp;
-  preferences->putBytes(key.c_str(), value, 300);
+  preferences->putBytes(key.c_str(), value, valueSize);
 }
 
-std::string loadSwitchState(Preferences* preferences){
-  std::string returnValue;
-  byte tempData[6];
-  uint8_t bytesRead = preferences->getBytes("Switch",tempData,6);
-  if(bytesRead == 0){
-    return "";
+bool loadSwitchState(Preferences* preferences, uint8_t value[], int valueSize){
+  int bytesRead = preferences->getBytes("Switch",value,valueSize);
+  if(bytesRead == valueSize){
+    return true;
+  }else{
+    return false;
   }
-  for(int i=0; i<6; i++){ //Switch State Length 6
-    returnValue += tempData[i];
-  }
-  return returnValue;
 }
 
-std::string loadAnimationState(Preferences* preferences){
-  std::string returnValue = "";
-  byte tempData[46];
-  uint8_t bytesRead = preferences->getBytes("Animation",tempData,46);
-  if(bytesRead == 0){
-    return "";
+bool loadAnimationState(Preferences* preferences, uint8_t value[], int valueSize){
+  int bytesRead = preferences->getBytes("Animation",value,valueSize);
+  if(bytesRead == valueSize){
+    return true;
+  }else{
+    return false;
   }
-  for(int i=0; i<46; i++){
-    returnValue += tempData[i];
-  }
-  return returnValue;
 }
 
-std::string loadChannelDetailState(Preferences* preferences, int index){
+bool loadChannelDetailState(Preferences* preferences, int index, uint8_t value[], int valueSize){
   char numstr[21];
   std::string temp = itoa(index, numstr, 10);
   std::string key = "Detail" + temp;
-
-  std::string returnValue = "";
-  byte tempData[11];
-  uint8_t bytesRead = preferences->getBytes(key.c_str(),tempData,11);
-  if(bytesRead == 0){
-    return "";
+  int bytesRead = preferences->getBytes(key.c_str(),value,valueSize);
+  if(bytesRead == valueSize){
+    return true;
+  }else{
+    return false;
   }
-  for(int i=0; i<11; i++){
-    returnValue += tempData[i];
-  }
-  return returnValue;
 }
 
-void loadChannelLocationState(Preferences* preferences, int index, uint8_t value[]){
+bool loadChannelLocationState(Preferences* preferences, int index, uint8_t value[], int valueSize){
   char numstr[21];
   std::string temp = itoa(index, numstr, 10);
   std::string key = "Loc" + temp;
-  preferences->getBytes(key.c_str(),value, 3*100);
-  return;
+  int bytesRead = preferences->getBytes(key.c_str(),value, valueSize);
+  if(bytesRead == valueSize){
+    return true;
+  }else{
+    return false;
+  }
 }

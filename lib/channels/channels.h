@@ -1,8 +1,9 @@
 #ifndef CHANNELS_H
 #define CHANNELS_H
-
 #include <FastLED.h>
 #include <switches.h>
+#include <ArduinoJson.h>
+
 #define CHANNEL_SIZE 11
 #define MAX_CHANNELS 16
 #define MAX_LEDS 100
@@ -84,6 +85,7 @@ const int channelpins[MAX_CHANNELS] = {CHANNEL_0_PIN,CHANNEL_1_PIN,CHANNEL_2_PIN
 union ChannelsConversion {
   uint16_t wordValue;
   char charValue[2];
+  uint8_t byteValue[2];
 };
 
 #define CHANNEL_STATE_LENGTH 11
@@ -96,8 +98,8 @@ struct ChannelState {
   bool rightTurn;
   bool brake;
   bool reverse;
-  uint16_t type;
-  uint16_t order;
+  uint16_t type; //Switch to uint8
+  uint16_t order; //Switch to uint8
   uint16_t numLEDs;
   //Below not needed to rebuild
   CRGB leds[MAX_LEDS];
@@ -114,11 +116,29 @@ void setChannelPins();
 
 void loadTestData(ChannelState channels[MAX_CHANNELS]);
 
+void getStateAsJson(ChannelState* channel, JsonObject doc, int index);
+
+void setStateFromJson(ChannelState* channel, JsonObject doc, int index);
+
+void getStateAsBytes(ChannelState * channel, uint8_t state[CHANNEL_STATE_LENGTH]);
+
+void getStateAsBytes(ChannelState channels[MAX_CHANNELS], int i, uint8_t state[CHANNEL_STATE_LENGTH]);
+
+std::string getStateAsString(ChannelState * channel);
+
 std::string getStateAsString(ChannelState channels[MAX_CHANNELS], int i);
 
 void setInitialState(ChannelState channels[MAX_CHANNELS]);
 
+void setStateFromBytes(ChannelState channels[MAX_CHANNELS], int i, uint8_t state[CHANNEL_STATE_LENGTH]);
+
+void setStateFromBytes(ChannelState * channel, uint8_t state[CHANNEL_STATE_LENGTH]);
+
 void setStateFromString(ChannelState channels[MAX_CHANNELS], int i, std::string inputValue);
+
+void setStateFromString(ChannelState * channel, std::string inputValue);
+
+void describeState(ChannelState channels[MAX_CHANNELS], int index);
 
 void describeState(ChannelState channels[MAX_CHANNELS]);
 
@@ -154,16 +174,5 @@ void fillRightTurn(ChannelState channels[MAX_CHANNELS], CRGB color);
 void setColorAtPos(ChannelState* channel, int pos, CRGB color);
 
 CRGB getColorAtPos(ChannelState* channel, int pos);
-
-std::string getChannelEnabled(ChannelState* channel);
-std::string getChannelInterior(ChannelState* channel);
-std::string getChannelDirectionFlipped(ChannelState* channel);
-std::string getChannelLeftTurn(ChannelState* channel);
-std::string getChannelRightTurn(ChannelState* channel);
-std::string getChannelBrake(ChannelState* channel);
-std::string getChannelReverse(ChannelState* channel);
-std::string getChannelType(ChannelState* channel);
-std::string getChannelOrder(ChannelState* channel);
-std::string getChannelNumLEDs(ChannelState* channel);
 
 #endif
