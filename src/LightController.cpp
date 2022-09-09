@@ -45,7 +45,7 @@ void saveState(State* currentState){
 
   for(int i=0; i<MAX_CHANNELS; i++){
     uint8_t channelBuffer[CHANNEL_STATE_LENGTH];
-    getStateAsBytes(&currentState->animation, channelBuffer);
+    getStateAsBytes(currentState->channels,i, channelBuffer);
     saveChannelDetailState(&currentState->preferences, i, channelBuffer, CHANNEL_STATE_LENGTH);
 
     uint8_t locationArray[MAX_LEDS*3];
@@ -153,28 +153,75 @@ bool handleMessages(State* currentState){
     default:
       return false;
   }
+}
 
+bool handleSignals(State* currentState){
+  int command = getSignalCommandFromQueue(0);
+  std::string state;
+  switch(command){
+    case RAMP_UP:
+      signalRampUp(currentState->channels, &currentState->switches);
+      return true;
+    case RAMP_DOWN:
+      signalRampDown(currentState->channels, &currentState->switches);
+      return true;
+    default:
+      return false;
+  }
 }
 
 bool delayAndPollForUpdate(State* currentState, int wifiConnections, int delay){
   unsigned long time = millis();
+  int webDelay = 0;
   int realDelay = delay;
   if(realDelay < 10){ //TEMP REMOVE WHEN DONE
     realDelay = 10;
   }
 
-  while(millis() < time + realDelay){
+  while(millis() < time + realDelay + webDelay){
     if(updateSwitchState(&currentState->switches) == true){
       return true;
     }
+    if(webDelay == 0 && handleSignals(currentState)){
+      //stuff here if we got a signal command
+    }
     if(handleMessages(currentState)){
-      realDelay=1000;
+      webDelay = 1000;
       time = millis();
     }
   }
   return false;
 }
+/*
+void testFunc(State * currentState){
+  Serial.println("***************START OF TESTING SHIT***********************");
+  ChannelState channel;
+  uint8_t loadBuffer[CHANNEL_STATE_LENGTH];
+  loadChannelDetailState(&currentState->preferences, 0, loadBuffer, CHANNEL_STATE_LENGTH);
 
+  Serial.println("Loaded Buffer: ");
+  for(int i=0; i<CHANNEL_STATE_LENGTH;i++){
+    Serial.print(loadBuffer[i]);
+  }
+  Serial.println("END BUFFER");
+
+  setStateFromBytes(&channel, loadBuffer);
+  describeStateSolo(&channel);
+
+  uint8_t readBuffer[CHANNEL_STATE_LENGTH];
+  getStateAsBytes(&channel, readBuffer);
+
+  Serial.println("Read Buffer: ");
+  for(int i=0; i<CHANNEL_STATE_LENGTH;i++){
+    Serial.print(loadBuffer[i]);
+  }
+  Serial.println("END BUFFER");
+
+
+
+  Serial.println("**************************************END OF TESTING SHIT**************************************");
+}
+*/
 void setupBluetooth(State* currentState){
   Serial.println("Bluetooth: Starting Up");
   initializeBluetooth(&currentState->bluetooth);
@@ -199,7 +246,6 @@ void setupBluetooth(State* currentState){
 }
 
 void loadSavedIfFound(State* currentState){
-  Serial.println("Checking for Saved States");
   bool matchedAll = true; //TEMP SHOULD BE true
 
   if(isFirstRun(&currentState->preferences) == true || matchedAll == false){
@@ -211,6 +257,7 @@ void loadSavedIfFound(State* currentState){
     if(loadSwitchState(&currentState->preferences, switchBuffer, SWITCH_STATE_LENGTH)){
       Serial.println("Found Saved Switch State");
       setStateFromBytes(&currentState->switches, switchBuffer);
+      //describeState(&currentState->switches);
     }else{
       Serial.println("NO Found Saved Switch State");
       matchedAll = false;
@@ -220,6 +267,7 @@ void loadSavedIfFound(State* currentState){
     if(loadAnimationState(&currentState->preferences, animationBuffer, ANIMATION_STATE_LENGTH) && matchedAll){
       Serial.println("Found Saved Animation State");
       setStateFromBytes(&currentState->animation, animationBuffer);
+      //describeState(&currentState->animation);
     }else{
       Serial.println("NO Found Saved Animation State");
       matchedAll = false;
@@ -232,6 +280,7 @@ void loadSavedIfFound(State* currentState){
         Serial.print(i);
         Serial.println(" Detail State Found");
         setStateFromBytes(currentState->channels, i, channelBuffer);
+        //describeState(currentState->channels, i);
       }else{
         Serial.print("NO Channel ");
         Serial.print(i);
@@ -242,6 +291,7 @@ void loadSavedIfFound(State* currentState){
       uint8_t locationArray[MAX_LEDS*3];
       if(loadChannelLocationState(&currentState->preferences, i, locationArray, MAX_LEDS*3) && matchedAll){
         setChannelLocations(&currentState->location, i, state.channels[i].numLEDs, locationArray);
+        //printChannelLocations(&currentState->location, i);
       }else{
         Serial.print("NO Channel ");
         Serial.print(i);
@@ -282,7 +332,7 @@ void setup() {
   }else{
     setupBluetooth(&state);
   }
-  createSignals(&state, &signalTaskHandle);
+  createSignals(&signalTaskHandle);
   Serial.println("Setup Complete");
   Serial.println("Starting Animations");
 }
@@ -290,7 +340,6 @@ void setup() {
 void loop() {
   //Serial.println("Looping");
   //if(getClientCount() == 0 && getBTClientCount(&state.bluetooth) == 0){
-    //unPauseSignals(&signalTaskHandle);
     unsigned long frameStartTime = millis();
     updateAnimation(&state.animation, state.channels, &state.switches, &state.location);
     unsigned long currentTime = millis();
@@ -315,7 +364,6 @@ void loop() {
     if(delayAndPollForUpdate(&state,clientsConnected, adjustedStepDelay) == true){
       Serial.println("New BLE value found, breaking out of delay early to update.");
     }
-    pauseSignals(&signalTaskHandle);
   }*/
 }
 

@@ -176,7 +176,6 @@ void initializeAP(State* state){
   });
   server.on("/toggle_on", HTTP_GET, [](AsyncWebServerRequest *request){
     sendCommandToQueue(DUMMY_COMMAND);
-    vTaskDelay(50);
     request->send(SPIFFS, "/toggle_on.png", "image/png");
   });
   server.on("/toggle_off", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -890,7 +889,7 @@ String channel1LocProcessor(const String& var){
   if(var == "MAX_COL" || var == "MAX_ROW" || var == "MAX_HEIGHT"){
     return String(LOCATION_GRID_SIZE - 1);
   }
-  if(var == "MAX_POS"){
+  if(var == "NUM_POS"){
     return String(channel.numLEDs);
   }
 
@@ -946,7 +945,7 @@ String channel2LocProcessor(const String& var){
   if(var == "MAX_COL" || var == "MAX_ROW" || var == "MAX_HEIGHT"){
     return String(LOCATION_GRID_SIZE - 1);
   }
-  if(var == "MAX_POS"){
+  if(var == "NUM_POS"){
     return String(channel.numLEDs);
   }
 
@@ -1002,7 +1001,7 @@ String channel3LocProcessor(const String& var){
   if(var == "MAX_COL" || var == "MAX_ROW" || var == "MAX_HEIGHT"){
     return String(LOCATION_GRID_SIZE - 1);
   }
-  if(var == "MAX_POS"){
+  if(var == "NUM_POS"){
     return String(channel.numLEDs);
   }
 
@@ -1058,7 +1057,7 @@ String channel4LocProcessor(const String& var){
   if(var == "MAX_COL" || var == "MAX_ROW" || var == "MAX_HEIGHT"){
     return String(LOCATION_GRID_SIZE - 1);
   }
-  if(var == "MAX_POS"){
+  if(var == "NUM_POS"){
     return String(channel.numLEDs);
   }
 
@@ -1114,7 +1113,7 @@ String channel5LocProcessor(const String& var){
   if(var == "MAX_COL" || var == "MAX_ROW" || var == "MAX_HEIGHT"){
     return String(LOCATION_GRID_SIZE - 1);
   }
-  if(var == "MAX_POS"){
+  if(var == "NUM_POS"){
     return String(channel.numLEDs);
   }
 
@@ -1170,7 +1169,7 @@ String channel6LocProcessor(const String& var){
   if(var == "MAX_COL" || var == "MAX_ROW" || var == "MAX_HEIGHT"){
     return String(LOCATION_GRID_SIZE - 1);
   }
-  if(var == "MAX_POS"){
+  if(var == "NUM_POS"){
     return String(channel.numLEDs);
   }
 
@@ -1226,7 +1225,7 @@ String channel7LocProcessor(const String& var){
   if(var == "MAX_COL" || var == "MAX_ROW" || var == "MAX_HEIGHT"){
     return String(LOCATION_GRID_SIZE - 1);
   }
-  if(var == "MAX_POS"){
+  if(var == "NUM_POS"){
     return String(channel.numLEDs);
   }
 
@@ -1283,7 +1282,7 @@ String channel8LocProcessor(const String& var){
   if(var == "MAX_COL" || var == "MAX_ROW" || var == "MAX_HEIGHT"){
     return String(LOCATION_GRID_SIZE - 1);
   }
-  if(var == "MAX_POS"){
+  if(var == "NUM_POS"){
     return String(channel.numLEDs);
   }
 
@@ -1339,7 +1338,7 @@ String channel9LocProcessor(const String& var){
   if(var == "MAX_COL" || var == "MAX_ROW" || var == "MAX_HEIGHT"){
     return String(LOCATION_GRID_SIZE - 1);
   }
-  if(var == "MAX_POS"){
+  if(var == "NUM_POS"){
     return String(channel.numLEDs);
   }
 
@@ -1395,7 +1394,7 @@ String channel10LocProcessor(const String& var){
   if(var == "MAX_COL" || var == "MAX_ROW" || var == "MAX_HEIGHT"){
     return String(LOCATION_GRID_SIZE - 1);
   }
-  if(var == "MAX_POS"){
+  if(var == "NUM_POS"){
     return String(channel.numLEDs);
   }
 
@@ -1451,7 +1450,7 @@ String channel11LocProcessor(const String& var){
   if(var == "MAX_COL" || var == "MAX_ROW" || var == "MAX_HEIGHT"){
     return String(LOCATION_GRID_SIZE - 1);
   }
-  if(var == "MAX_POS"){
+  if(var == "NUM_POS"){
     return String(channel.numLEDs);
   }
 
@@ -1507,7 +1506,7 @@ String channel12LocProcessor(const String& var){
   if(var == "MAX_COL" || var == "MAX_ROW" || var == "MAX_HEIGHT"){
     return String(LOCATION_GRID_SIZE - 1);
   }
-  if(var == "MAX_POS"){
+  if(var == "NUM_POS"){
     return String(channel.numLEDs);
   }
 
@@ -1563,7 +1562,7 @@ String channel13LocProcessor(const String& var){
   if(var == "MAX_COL" || var == "MAX_ROW" || var == "MAX_HEIGHT"){
     return String(LOCATION_GRID_SIZE - 1);
   }
-  if(var == "MAX_POS"){
+  if(var == "NUM_POS"){
     return String(channel.numLEDs);
   }
 
@@ -1619,7 +1618,7 @@ String channel14LocProcessor(const String& var){
   if(var == "MAX_COL" || var == "MAX_ROW" || var == "MAX_HEIGHT"){
     return String(LOCATION_GRID_SIZE - 1);
   }
-  if(var == "MAX_POS"){
+  if(var == "NUM_POS"){
     return String(channel.numLEDs);
   }
 
@@ -1675,7 +1674,7 @@ String channel15LocProcessor(const String& var){
   if(var == "MAX_COL" || var == "MAX_ROW" || var == "MAX_HEIGHT"){
     return String(LOCATION_GRID_SIZE - 1);
   }
-  if(var == "MAX_POS"){
+  if(var == "NUM_POS"){
     return String(channel.numLEDs);
   }
 

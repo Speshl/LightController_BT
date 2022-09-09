@@ -138,6 +138,8 @@ void setStateFromString(ChannelState channels[MAX_CHANNELS], int i, std::string 
 
 void setStateFromString(ChannelState * channel, std::string inputValue);
 
+void describeStateSolo(ChannelState * channel);
+
 void describeState(ChannelState channels[MAX_CHANNELS], int index);
 
 void describeState(ChannelState channels[MAX_CHANNELS]);

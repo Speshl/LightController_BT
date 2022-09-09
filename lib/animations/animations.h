@@ -66,6 +66,10 @@ void leftTurnAnimationWithColor(ChannelState channels[MAX_CHANNELS], SwitchState
 
 void rightTurnAnimationWithColor(ChannelState channels[MAX_CHANNELS], SwitchState* switches, CRGB color);
 
+void signalRampUp(ChannelState channels[MAX_CHANNELS], SwitchState* switches);
+
+void signalRampDown(ChannelState channels[MAX_CHANNELS], SwitchState* switches);
+
 std::string getAnimationIndex(AnimationState* animation);
 
 std::string getStepSize(AnimationState* animation);

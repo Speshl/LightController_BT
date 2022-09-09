@@ -46,8 +46,6 @@ void showAll(ChannelState channels[MAX_CHANNELS]){
   //Serial.println("Showing All");
   for(int i=0; i<MAX_CHANNELS; i++){
     if(channels[i].updated == true && channels[i].controller != NULL){
-      //Serial.print("Showing Channel ");
-      //Serial.println(i);
       channels[i].controller->showLeds();
       channels[i].updated = false;
     }
@@ -57,8 +55,6 @@ void showAll(ChannelState channels[MAX_CHANNELS]){
 void applyBufferAndShow(ChannelState channels[MAX_CHANNELS], SwitchState* switches){
   for(int i=0; i<MAX_CHANNELS; i++){
     if(isActiveWithSpecialCases(&channels[i], switches) == true){
-      //Serial.printf("Applying Buffer for channel: ");
-      //Serial.println(i);
       channels[i].updated = true;
       for(int j=0; j<channels[i].numLEDs; j++){
         int actualPosition = j;
@@ -159,13 +155,49 @@ void getStateAsBytes(ChannelState * channel, uint8_t state[CHANNEL_STATE_LENGTH]
   
   ChannelsConversion converter;
   converter.wordValue = channel->numLEDs;
-  state[9] = converter.byteValue[0];
-  state[10] = converter.byteValue[1];
+  state[9] = converter.byteValue[1];
+  state[10] = converter.byteValue[0];
 }
 
 void getStateAsBytes(ChannelState channels[MAX_CHANNELS], int i, uint8_t state[CHANNEL_STATE_LENGTH]){
   //Serial.println("Getting channel state from string");
   getStateAsBytes(&channels[i],state);
+}
+
+void setStateFromBytes(ChannelState * channel, uint8_t state [CHANNEL_STATE_LENGTH]){
+  channel->enabled = state[0];
+  channel->interior = state[1];
+  channel->directionFlipped = state[2];
+  channel->leftTurn = state[3];
+  channel->rightTurn = state[4];
+  channel->brake = state[5];
+  channel->reverse = state[6];
+  channel->type = state[7];
+  channel->order = state[8];
+
+  ChannelsConversion converter;
+  converter.byteValue[1] = state[9];
+  converter.byteValue[0] = state[10];
+  channel->numLEDs = converter.wordValue;
+
+  if(channel->numLEDs > MAX_LEDS){
+    channel->numLEDs = MAX_LEDS;
+  }
+}
+
+void setStateFromBytes(ChannelState channels[MAX_CHANNELS],int i, uint8_t state [CHANNEL_STATE_LENGTH]){
+  //Serial.println("Setting channel state from string");
+  setStateFromBytes(&channels[i], state);
+  if(channels[i].controller == NULL){
+    memset(channels[i].leds,0,sizeof(channels[i].leds));
+    memset(channels[i].ledsBuffer,0,sizeof(channels[i].ledsBuffer));
+    channels[i].updated = false;
+    channels[i].restartRequired = false;
+    getDefinition(&(channels[i]), i); //Get a controller where one didn't already exist
+  }
+  clear(channels);
+  //Serial.println("Showing All after state from string update for channels");
+  showAll(channels);
 }
 
 std::string getStateAsString(ChannelState * channel){
@@ -194,43 +226,6 @@ std::string getStateAsString(ChannelState channels[MAX_CHANNELS], int i){
   return getStateAsString(&channels[i]);
 }
 
-void setStateFromBytes(ChannelState * channel, uint8_t state [CHANNEL_STATE_LENGTH]){
-  int currentPos = 0;
-  bool newTypeFound = false;
-
-  channel->enabled = state[0];
-  channel->interior = state[1];
-  channel->directionFlipped = state[2];
-  channel->leftTurn = state[3];
-  channel->rightTurn = state[4];
-  channel->brake = state[5];
-  channel->reverse = state[6];
-
-  char newType = state[7];
-  if(newType != channel->type){
-    channel->type = newType;
-    newTypeFound = true;
-  }
-
-  channel->order = state[8];
-
-  ChannelsConversion converter;
-  converter.byteValue[0] = state[9];
-  converter.byteValue[1] = state[10];
-  channel->numLEDs = converter.wordValue;
-}
-
-void setStateFromBytes(ChannelState channels[MAX_CHANNELS],int i, uint8_t state [CHANNEL_STATE_LENGTH]){
-  //Serial.println("Setting channel state from string");
-  setStateFromBytes(&channels[i], state);
-
-  if(channels[i].enabled == true && channels[i].controller == NULL){
-    getDefinition(&(channels[i]), i); //Get a controller where one didn't already exist
-  }
-  clear(channels);
-  //Serial.println("Showing All after state from string update for channels");
-  showAll(channels);
-}
 
 void setStateFromString(ChannelState * channel, std::string inputValue){
 if (inputValue.length() < CHANNEL_SIZE){
@@ -269,12 +264,36 @@ void setStateFromString(ChannelState channels[MAX_CHANNELS],int i, std::string i
   //Serial.println("Setting channel state from string");
   setStateFromString(&channels[i], inputValue);
 
-  if(channels[i].enabled == true && channels[i].controller == NULL){
+  if(channels[i].controller == NULL){
     getDefinition(&(channels[i]), i); //Get a controller where one didn't already exist
   }
   clear(channels);
   //Serial.println("Showing All after state from string update for channels");
   showAll(channels);
+}
+
+void describeStateSolo(ChannelState * channel){
+  Serial.println("Describing Channel :");
+  Serial.print("Enabled: ");
+  Serial.println((uint8_t) channel->enabled);//So it displays as number
+  Serial.print("Interior: ");
+  Serial.println((uint8_t) channel->interior);//So it displays as number
+  Serial.print("DirectionFlipped: ");
+  Serial.println((uint8_t) channel->directionFlipped);//So it displays as number
+  Serial.print("LeftTurn: ");
+  Serial.println((uint8_t) channel->leftTurn);//So it displays as number
+  Serial.print("RightTurn: ");
+  Serial.println((uint8_t) channel->rightTurn);//So it displays as number
+  Serial.print("Brake: ");
+  Serial.println((uint8_t) channel->brake);//So it displays as number
+  Serial.print("Reverse: ");
+  Serial.println((uint8_t) channel->reverse);//So it displays as number
+  Serial.print("Type: ");
+  Serial.println((uint8_t) channel->type);//So it displays as number
+  Serial.print("Order: ");
+  Serial.println((uint8_t) channel->order);//So it displays as number 
+  Serial.print("NumLEDs: ");
+  Serial.println(channel->numLEDs);
 }
 
 void describeState(ChannelState channels[MAX_CHANNELS], int index){
@@ -439,7 +458,6 @@ std::string getChannelNumLEDs(ChannelState* channel){
 
 
 void getDefinition(ChannelState * channel, int index){
-  //Serial.println("Start Getting strip definition");
 //FIRST 8: GPIO_NUM_23,GPIO_NUM_22,GPIO_NUM_21,GPIO_NUM_19,GPIO_NUM_18,GPIO_NUM_5,GPIO_NUM_17,GPIO_NUM_16
 //LAST 8:  ,GPIO_NUM_4,GPIO_NUM_0,GPIO_NUM_2,GPIO_NUM_15,GPIO_NUM_13,GPIO_NUM_12,GPIO_NUM_14,GPIO_NUM_27
   switch (index){
@@ -452,7 +470,7 @@ void getDefinition(ChannelState * channel, int index){
           channel->controller = &FastLED.addLeds<WS2812, CHANNEL_0_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
         default:
-          //FastLED.addLeds<NEOPIXEL, 23, RGB>(channel->leds, MAX_LEDS);
+          channel->controller = &FastLED.addLeds<WS2811, CHANNEL_0_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
       }
       break;
@@ -465,7 +483,7 @@ void getDefinition(ChannelState * channel, int index){
           channel->controller = &FastLED.addLeds<WS2812, CHANNEL_1_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
         default:
-          //FastLED.addLeds<NEOPIXEL, 22, RGB>(channel->leds, MAX_LEDS);
+          channel->controller = &FastLED.addLeds<WS2811, CHANNEL_1_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
       }
       break;
@@ -478,7 +496,7 @@ void getDefinition(ChannelState * channel, int index){
           channel->controller = &FastLED.addLeds<WS2812, CHANNEL_2_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
         default:
-          //FastLED.addLeds<NEOPIXEL, 3, RGB>(channel->leds, MAX_LEDS);
+          channel->controller = &FastLED.addLeds<WS2811, CHANNEL_2_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
       }
       break;
@@ -491,7 +509,7 @@ void getDefinition(ChannelState * channel, int index){
           channel->controller = &FastLED.addLeds<WS2812, CHANNEL_3_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
         default:
-          //FastLED.addLeds<NEOPIXEL, 21, RGB>(channel->leds, MAX_LEDS);
+          channel->controller = &FastLED.addLeds<WS2811, CHANNEL_3_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
       }
       break;
@@ -504,7 +522,7 @@ void getDefinition(ChannelState * channel, int index){
           channel->controller = &FastLED.addLeds<WS2812, CHANNEL_4_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
         default:
-          //FastLED.addLeds<NEOPIXEL, 19, RGB>(channel->leds, MAX_LEDS);
+          channel->controller = &FastLED.addLeds<WS2811, CHANNEL_4_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
       }
       break;
@@ -517,7 +535,7 @@ void getDefinition(ChannelState * channel, int index){
           channel->controller = &FastLED.addLeds<WS2812, CHANNEL_5_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
         default:
-          //FastLED.addLeds<NEOPIXEL, 18, RGB>(channel->leds, MAX_LEDS);
+          channel->controller = &FastLED.addLeds<WS2811, CHANNEL_5_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
       }
       break;
@@ -530,7 +548,7 @@ void getDefinition(ChannelState * channel, int index){
           channel->controller = &FastLED.addLeds<WS2812, CHANNEL_6_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
         default:
-          //FastLED.addLeds<NEOPIXEL, 5, RGB>(channel->leds, MAX_LEDS);
+          channel->controller = &FastLED.addLeds<WS2811, CHANNEL_6_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
       }
       break;
@@ -543,7 +561,7 @@ void getDefinition(ChannelState * channel, int index){
           channel->controller = &FastLED.addLeds<WS2812, CHANNEL_7_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
         default:
-          //FastLED.addLeds<NEOPIXEL, 4, RGB>(channel->leds, MAX_LEDS);
+          channel->controller = &FastLED.addLeds<WS2811, CHANNEL_7_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
       }
       break;
@@ -556,7 +574,7 @@ void getDefinition(ChannelState * channel, int index){
           channel->controller = &FastLED.addLeds<WS2812, CHANNEL_8_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
         default:
-          //FastLED.addLeds<NEOPIXEL, 0, RGB>(channel->leds, MAX_LEDS);
+          channel->controller = &FastLED.addLeds<WS2811, CHANNEL_8_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
       }
       break;
@@ -569,7 +587,7 @@ void getDefinition(ChannelState * channel, int index){
           channel->controller = &FastLED.addLeds<WS2812, CHANNEL_9_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
         default:
-          //FastLED.addLeds<NEOPIXEL, 2, RGB>(channel->leds, MAX_LEDS);
+          channel->controller = &FastLED.addLeds<WS2811, CHANNEL_9_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
       }
       break;
@@ -582,7 +600,7 @@ void getDefinition(ChannelState * channel, int index){
           channel->controller = &FastLED.addLeds<WS2812, CHANNEL_10_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
         default:
-          //FastLED.addLeds<NEOPIXEL, 15, RGB>(channel->leds, MAX_LEDS);
+          channel->controller = &FastLED.addLeds<WS2811, CHANNEL_10_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
       }
       break;
@@ -595,7 +613,7 @@ void getDefinition(ChannelState * channel, int index){
           channel->controller = &FastLED.addLeds<WS2812, CHANNEL_11_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
         default:
-          //FastLED.addLeds<NEOPIXEL, 25, RGB>(channel->leds, MAX_LEDS);
+          channel->controller = &FastLED.addLeds<WS2811, CHANNEL_11_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
       }
       break;
@@ -608,7 +626,7 @@ void getDefinition(ChannelState * channel, int index){
           channel->controller = &FastLED.addLeds<WS2812, CHANNEL_12_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
         default:
-          //FastLED.addLeds<NEOPIXEL, 26, RGB>(channel->leds, MAX_LEDS);
+          channel->controller = &FastLED.addLeds<WS2811, CHANNEL_12_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
       }
       break;
@@ -621,7 +639,7 @@ void getDefinition(ChannelState * channel, int index){
           channel->controller = &FastLED.addLeds<WS2812, CHANNEL_13_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
         default:
-          //FastLED.addLeds<NEOPIXEL, 14, RGB>(channel->leds, MAX_LEDS);
+          channel->controller = &FastLED.addLeds<WS2811, CHANNEL_13_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
       }
       break;
@@ -634,7 +652,7 @@ void getDefinition(ChannelState * channel, int index){
           channel->controller = &FastLED.addLeds<WS2812, CHANNEL_14_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
         default:
-          //FastLED.addLeds<NEOPIXEL, 12, RGB>(channel->leds, MAX_LEDS);
+          channel->controller = &FastLED.addLeds<WS2811, CHANNEL_14_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
       }
       break;
@@ -647,7 +665,7 @@ void getDefinition(ChannelState * channel, int index){
           channel->controller = &FastLED.addLeds<WS2812, CHANNEL_15_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
         default:
-          //FastLED.addLeds<NEOPIXEL, 13, RGB>(channel->leds, MAX_LEDS);
+          channel->controller = &FastLED.addLeds<WS2811, CHANNEL_15_PIN, RGB>(channel->leds, MAX_LEDS);
           break;
       }
       break;

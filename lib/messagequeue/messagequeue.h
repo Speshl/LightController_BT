@@ -11,6 +11,10 @@
 #define CHANNEL_MESSAGE 4
 #define CHANNELPOS_MESSAGE 5
 
+//Signal Commands
+#define RAMP_UP 1
+#define RAMP_DOWN 2
+
 //Commands
 #define Command int
 #define NO_COMMAND 0
@@ -27,6 +31,7 @@
 #define READ_CHANNELPOS_START 400 //Subtract 400 to get ChannelPOS to send
 #define END_COMMAND 500 //End of command range
 
+static QueueHandle_t signalQueue;
 static QueueHandle_t commandQueue;
 static QueueHandle_t switchQueue;
 static QueueHandle_t animationQueue;
@@ -39,6 +44,9 @@ static QueueHandle_t channelPosQueue;
 #define CHANNELPOS_MESSAGE_LENGTH 300
 
 void initializeMessageQueue();
+
+int getSignalCommandFromQueue(int wait);
+void sendSignalCommandToQueue(int command);
 
 int getCommandFromQueue(int wait);
 void sendCommandToQueue(int command);

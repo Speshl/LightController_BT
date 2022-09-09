@@ -5,7 +5,7 @@ void setInitialState(AnimationState* animation){
   animation->palettePreset = 0; //0 is custom
   animation->fps = 20;
   animation->brightness = 255;
-  animation->stepSize = 1;
+  animation->stepSize = 20;
   animation->blending = LINEARBLEND;
 
   for(int i=0; i<MAX_COLORS*4;i++){
@@ -45,9 +45,13 @@ void setStateFromBytes(AnimationState* animation, uint8_t state[ANIMATION_STATE_
 
   animation->fps = state[5];
 
-  for(int i=0; i<MAX_COLORS*4; i++){
+  byte tempPalette[4*MAX_COLORS];
+  for(int i=0; i< MAX_COLORS*4; i++){
     animation->paletteDescription[i] = state[i+6];
+    tempPalette[i] = state[i+6];
   }
+  animation->palette.loadDynamicGradientPalette(tempPalette);
+
   if(animation->stepSize == 0){
     animation->stepSize = 1;
   }
@@ -91,9 +95,13 @@ void setStateFromJson(AnimationState* animation, JsonObject doc){
   animation->blending = doc["blending"];
   animation->fps = doc["fps"];
 
+  byte tempPalette[4*MAX_COLORS];
   for(int i=0; i< MAX_COLORS*4; i++){
     animation->paletteDescription[i] = doc["paletteDescription"][i];
+    tempPalette[i] = doc["paletteDescription"][i];
   }
+  animation->palette.loadDynamicGradientPalette(tempPalette);
+  
 
   if(animation->stepSize == 0){
     animation->stepSize = 1;
@@ -538,6 +546,64 @@ void leftTurnAnimationWithColor(ChannelState channels[MAX_CHANNELS], SwitchState
 
 void rightTurnAnimationWithColor(ChannelState channels[MAX_CHANNELS], SwitchState* switches, CRGB color){
   fillRightTurn(channels, color);
+}
+
+void signalRampUp(ChannelState channels[MAX_CHANNELS], SwitchState* switches){
+  bool updated = false;
+  if(switches->reverse){
+    updated = true;
+    reverseAnimation(channels, switches);
+  }
+  //brake light is next highest importance
+  if(switches->brake){
+    updated = true;
+    Serial.println("Brake ON");
+    brakeAnimation(channels, switches);
+  }
+  //turn signals are highest priority because they are intermittent and will default back to other signal if applicable
+  if(switches->leftTurn){
+    updated = true;
+    Serial.println("Left Turn ON");
+    leftTurnAnimationWithColor(channels, switches, CRGB::Orange); 
+  }
+  if(switches->rightTurn){
+    updated = true;
+    Serial.println("Right Turn ON");
+    rightTurnAnimationWithColor(channels, switches, CRGB::Orange);
+  }
+  //display lights with priority maintained
+  if(updated){
+    showAll(channels);
+  }
+}
+
+void signalRampDown(ChannelState channels[MAX_CHANNELS], SwitchState* switches){
+  //Set turn signals back to off
+  bool updated = false;
+  if(switches->leftTurn){
+    updated = true;
+    Serial.println("Left Turn OFF");
+    leftTurnAnimationWithColor(channels, switches, CRGB::Black); 
+  }
+  if(switches->rightTurn){
+    updated = true;
+    Serial.println("Right Turn OFF");
+    rightTurnAnimationWithColor(channels, switches, CRGB::Black);
+  }
+  //turn any turn signal back to to reverse color if they overlapped
+  if(switches->reverse){
+    updated = true;
+    reverseAnimation(channels, switches);
+  }
+  //finally turn back on any overlapping breaklights
+  if(switches->brake){
+    updated = true;
+    brakeAnimation(channels, switches);
+  }
+  //Show the final prioritized state of the lights
+  if(updated){
+    showAll(channels);
+  }
 }
 
 uint16_t getStepDelay(AnimationState* animation, uint16_t frameTime){

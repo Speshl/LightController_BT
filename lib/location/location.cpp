@@ -551,6 +551,19 @@ void removeAllEntries(LocationState* state){
   rebuildIndexes(state);
 }
 
+void printChannelLocations(LocationState * state, int channelIndex){
+  Serial.print("Print Channel ");;
+  Serial.print(channelIndex);
+  Serial.println(" Locations");
+  LocationEntry* currentLocation = state->firstRowLocation;
+  while(currentLocation != NULL){
+    if(currentLocation->channel == channelIndex){
+      describeLocation(currentLocation);
+    }
+    currentLocation = currentLocation->nextRow;
+  }
+}
+
 void describeLocation(LocationEntry* entry){
   if(entry == NULL){
     Serial.println("Location is empty");

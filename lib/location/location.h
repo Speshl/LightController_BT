@@ -66,6 +66,8 @@ void removeAllEntries(LocationState* state);
 
 //void describeState(LocationState* state);
 
+void printChannelLocations(LocationState* state, int channel);
+
 void describeLocation(LocationEntry* entry);
 
 int entryAtLocation(LocationState* state, uint8_t row, uint8_t col, uint8_t height);

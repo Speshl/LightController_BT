@@ -7,10 +7,9 @@
 #include <location.h>
 #include <switches.h>
 #include <storage.h>
+#include <messagequeue.h>
 
 #define SIGNAL_CORE 0
-
-static bool paused = false;
 
 struct State {
   AnimationState animation;
@@ -21,10 +20,6 @@ struct State {
   BluetoothState bluetooth;
 };
 
-void createSignals(State* state, TaskHandle_t* handle);
-
-void pauseSignals(TaskHandle_t* handle);
-
-void unPauseSignals(TaskHandle_t* handle);
+void createSignals(TaskHandle_t* handle);
 
 #endif

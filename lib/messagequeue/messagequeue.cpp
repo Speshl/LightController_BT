@@ -2,6 +2,11 @@
 
 void initializeMessageQueue(){
     Serial.println("Building Message Queues");
+    signalQueue = xQueueCreate( 1, sizeof(int));
+    if(signalQueue == NULL){
+        Serial.println("Error creating signalQueue");
+    }
+
     commandQueue = xQueueCreate( 1, sizeof(int));
     if(commandQueue == NULL){
         Serial.println("Error creating commandQueue");
@@ -26,6 +31,20 @@ void initializeMessageQueue(){
     if(channelPosQueue == NULL){
         Serial.println("Error creating channelPosQueue");
     }
+}
+
+int getSignalCommandFromQueue(int wait){
+    int command;
+    bool found = xQueueReceive(signalQueue, &command, wait);
+    if(found){
+        return command;
+    }else{
+        return NO_COMMAND;
+    }
+}
+
+void sendSignalCommandToQueue(int command){
+    xQueueSend(signalQueue, &command, portMAX_DELAY);
 }
 
 int getCommandFromQueue(int wait){
