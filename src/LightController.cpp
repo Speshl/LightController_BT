@@ -78,7 +78,8 @@ void saveIfRequired(State* currentState){
   }
 
   if(currentState->animation.updated){
-    currentState->switches.updated = false;
+    currentState->animation.updated = false;
+    animationUpdated(&currentState->animation, currentState->channels);
     uint8_t buffer[ANIMATION_STATE_LENGTH];
     getStateAsBytes(&currentState->animation, buffer);
     saveAnimationState(&currentState->preferences, buffer, ANIMATION_STATE_LENGTH);
@@ -91,13 +92,13 @@ void saveIfRequired(State* currentState){
       getStateAsBytes(currentState->channels,i, channelBuffer);
       saveChannelDetailState(&currentState->preferences, i, channelBuffer, CHANNEL_STATE_LENGTH);
     }
-    if(currentState->location.updated){
+    if(currentState->location.updated){ //Save for all channels if found
       uint8_t locationArray[MAX_LEDS*3];
       getChannelLocations(&currentState->location, i, locationArray);
       saveChannelLocationState(&currentState->preferences, i, locationArray, MAX_LEDS*3);
     }
   }
-  currentState->location.updated=false;
+  currentState->location.updated=false;//reset location updated here because it is shared for all channels
 }
 
 bool delayAndPollForUpdate(State* currentState, int wifiConnections, int delay){
@@ -105,17 +106,13 @@ bool delayAndPollForUpdate(State* currentState, int wifiConnections, int delay){
   int signalCommand = 0;
   unsigned long time = millis();
   int webDelay = 0;
-  int realDelay = delay;
-  if(realDelay < 10){ //TEMP REMOVE WHEN DONE
-    realDelay = 10;
-  }
-  SwitchState lastSwitchState = currentState->switches;
+  SwitchState lastSwitchState = currentState->switches;//Save copy of switch state to compare to without using global while request threads run
+
   getControllerStatusFromQueue(); //Remove previous active status
   sendControllerStatusToQueue(INACTIVE); //Set Inactive status while waiting
-  while(millis() < time + realDelay + webDelay || peekRequestStatusFromQueue() == ACTIVE){
-    if(millis() > time + realDelay + webDelay && peekRequestStatusFromQueue() == ACTIVE){
-      //Serial.println("Request Active");
-      webDelay = 500; //Delay an extra second
+  while(millis() < time + delay + webDelay || peekRequestStatusFromQueue() == ACTIVE){
+    if(millis() > time + delay + webDelay && peekRequestStatusFromQueue() == ACTIVE){
+      webDelay = 500; //Delay an extra half second
       time = millis(); //Reset delay start time to now
     }
 
@@ -258,32 +255,24 @@ void setup() {
 }
 
 void loop() {
-  //Serial.println("Looping");
-  //if(getClientCount() == 0 && getBTClientCount(&state.bluetooth) == 0){
-    unsigned long frameStartTime = millis();
-    updateAnimation(&state.animation, state.channels, &state.switches, &state.location);
-    unsigned long currentTime = millis();
-    //Serial.print("Frame Time: ");
-    uint16_t frameTime = currentTime - frameStartTime;
-    //Serial.println(frameTime);
+  unsigned long frameStartTime = millis();
+  updateAnimation(&state.animation, state.channels, &state.switches, &state.location);
+  unsigned long currentTime = millis();
+  //Serial.print("Frame Time: ");
+  uint16_t frameTime = currentTime - frameStartTime;
+  //Serial.println(frameTime);
 
-    uint16_t adjustedStepDelay = getStepDelay(&state.animation, frameTime);
-    if(delayAndPollForUpdate(&state,clientsConnected, adjustedStepDelay) == true){
-      Serial.println("New BLE value found, breaking out of delay early to update.");
-    }
-    /*Serial.print("FrameToFrame Time: ");
-    currentTime = millis();
-    state.animation.frameToFrameTime = currentTime - state.animation.lastFrameTime;
-    state.animation.lastFrameTime = currentTime;
-    Serial.println(state.animation.frameToFrameTime);*/
-    /*Serial.print("Free Heap: ");
-    Serial.println(xPortGetFreeHeapSize());*/
-    runGarbageCollector(&state.location);
-  /*}else{
-    uint16_t adjustedStepDelay = getStepDelay(&state.animation, 0);
-    if(delayAndPollForUpdate(&state,clientsConnected, adjustedStepDelay) == true){
-      Serial.println("New BLE value found, breaking out of delay early to update.");
-    }
-  }*/
+  uint16_t adjustedStepDelay = getStepDelay(&state.animation, frameTime);
+  if(delayAndPollForUpdate(&state,clientsConnected, adjustedStepDelay) == true){
+    Serial.println("New BLE value found, breaking out of delay early to update.");
+  }
+  /*Serial.print("FrameToFrame Time: ");
+  currentTime = millis();
+  state.animation.frameToFrameTime = currentTime - state.animation.lastFrameTime;
+  state.animation.lastFrameTime = currentTime;
+  Serial.println(state.animation.frameToFrameTime);*/
+  /*Serial.print("Free Heap: ");
+  Serial.println(xPortGetFreeHeapSize());*/
+  runGarbageCollector(&state.location);
 }
 
