@@ -130,9 +130,9 @@ bool delayAndPollForUpdate(State* currentState, int wifiConnections, int delay){
   getControllerStatusFromQueue();//Remove previous Inactive status
   sendControllerStatusToQueue(ACTIVE);//Set Active status until we call this function again to wait
 
-  saveIfRequired(currentState);
+  saveIfRequired(currentState); //Check if anything was updated, and save it if so
 
-  handleSignals(currentState, signalCommand);
+  handleSignals(currentState, signalCommand);//Run signal animation if specified
 
   return returnValue;
 }

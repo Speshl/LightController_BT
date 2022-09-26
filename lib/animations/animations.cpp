@@ -571,10 +571,7 @@ void signalRampUp(ChannelState channels[MAX_CHANNELS], SwitchState* switches){
     Serial.println("Right Turn ON");
     rightTurnAnimationWithColor(channels, switches, CRGB::Orange);
   }
-  //display lights with priority maintained
-  /*if(updated){ //Try with main show
-    showAll(channels);
-  }*/
+  //Signals will show when main animation updates strips
 }
 
 void signalRampDown(ChannelState channels[MAX_CHANNELS], SwitchState* switches){
@@ -600,10 +597,7 @@ void signalRampDown(ChannelState channels[MAX_CHANNELS], SwitchState* switches){
     updated = true;
     brakeAnimation(channels, switches);
   }
-  //Show the final prioritized state of the lights
-  /*if(updated){ //Try with main show
-    showAll(channels);
-  }*/
+   //Signals will show when main animation updates strips
 }
 
 uint16_t getStepDelay(AnimationState* animation, uint16_t frameTime){
