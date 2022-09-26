@@ -1,6 +1,9 @@
 #ifndef WEB_H
 #define WEB_H
 #include <Arduino.h>
+extern "C" {
+    #include "crypto/base64.h"
+}
 #include <channels.h>
 #include <location.h>
 #include <animations.h>
@@ -19,7 +22,7 @@
 #define AP_SSID "LightControllerConfig"
 #define AP_PASS "password"
 
-//typedef int (* String(const String& var))(int param);
+static State* GlobalState;
 
 static DNSServer dnsServer;
 static AsyncWebServer server(80);
@@ -40,7 +43,9 @@ String switchesProcessor(const String& var);
 
 String channelProcessor(const String& var);
 
-AwsTemplateProcessor channelLocProcessor(int channelIndex);
+AwsTemplateProcessor getChannelLocProcessor(int channelIndex);
+
+AwsTemplateProcessor getChannelProcessor(int channelIndex);
 
 int getClientCount();
 

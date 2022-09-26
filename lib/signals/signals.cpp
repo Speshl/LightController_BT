@@ -5,9 +5,13 @@ void signalTask(void *pvParameters){
   TickType_t xLastWakeTime = xTaskGetTickCount();
   const TickType_t xFrequency = 500;
   for(;;){//following comments assume all switches are on
-    sendSignalCommandToQueue(RAMP_UP);
+    if(peekRequestStatusFromQueue() != ACTIVE){
+      sendSignalCommandToQueue(RAMP_UP);
+    }
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
-    sendSignalCommandToQueue(RAMP_DOWN);
+    if(peekRequestStatusFromQueue() != ACTIVE){
+      sendSignalCommandToQueue(RAMP_DOWN);
+    }
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }

@@ -102,10 +102,10 @@ struct ChannelState {
   uint16_t order; //Switch to uint8
   uint16_t numLEDs;
   //Below not needed to rebuild
+  bool updated;
   CRGB leds[MAX_LEDS];
   CRGB ledsBuffer[MAX_LEDS];
   CLEDController* controller;
-  bool updated;
   bool restartRequired;
 };
 

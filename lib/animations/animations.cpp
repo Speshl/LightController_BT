@@ -572,9 +572,9 @@ void signalRampUp(ChannelState channels[MAX_CHANNELS], SwitchState* switches){
     rightTurnAnimationWithColor(channels, switches, CRGB::Orange);
   }
   //display lights with priority maintained
-  if(updated){
+  /*if(updated){ //Try with main show
     showAll(channels);
-  }
+  }*/
 }
 
 void signalRampDown(ChannelState channels[MAX_CHANNELS], SwitchState* switches){
@@ -601,9 +601,9 @@ void signalRampDown(ChannelState channels[MAX_CHANNELS], SwitchState* switches){
     brakeAnimation(channels, switches);
   }
   //Show the final prioritized state of the lights
-  if(updated){
+  /*if(updated){ //Try with main show
     showAll(channels);
-  }
+  }*/
 }
 
 uint16_t getStepDelay(AnimationState* animation, uint16_t frameTime){

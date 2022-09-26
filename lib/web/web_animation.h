@@ -1,3 +1,6 @@
+#include <Arduino.h>
+
+static const char animation_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
 
@@ -37,6 +40,15 @@
             margin: auto;
         }
 
+        .color-palette-grid {
+            display: grid;
+            gap: 5px;
+            grid-template-columns: 100px 100px 100px;
+            width: 300px;
+            padding: 0px;
+            margin: auto;
+        }
+
         .left-column {
             text-align: right;
         }
@@ -49,14 +61,6 @@
             text-align: left;
         }
 
-        .color-palette-grid {
-            display: grid;
-            gap: 5px;
-            grid-template-columns: 100px 100px 100px;
-            width: 300px;
-            padding: 0px;
-            margin: auto;
-        }
     </style>
 </head>
 
@@ -298,5 +302,5 @@
         <div class="right-column"></div>
     </div>
 </body>
-
 </html>
+%LAST_LINE%)rawliteral";

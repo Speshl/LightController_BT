@@ -55,108 +55,7 @@ void saveState(State* currentState){
   Serial.println("State Saved");
 }
 
-void sendSwitches(State* currentState){
-  uint8_t buffer[SWITCH_STATE_LENGTH];
-  getStateAsBytes(&currentState->switches, buffer);
-  sendSwitchToQueue(buffer);
-}
-
-void readSwitches(State* currentState){
-  uint8_t buffer[SWITCH_STATE_LENGTH];
-  getSwitchFromQueue(buffer);
-  setStateFromBytes(&currentState->switches, buffer);
-  //describeState(&currentState->switches);
-}
-
-void sendAnimation(State* currentState){
-  uint8_t buffer[ANIMATION_STATE_LENGTH];
-  getStateAsBytes(&currentState->animation, buffer);
-  sendAnimationToQueue(buffer);
-}
-
-void readAnimation(State* currentState){
-  uint8_t buffer[ANIMATION_STATE_LENGTH];
-  getAnimationFromQueue(buffer);
-  setStateFromBytes(&currentState->animation, buffer);
-  describeState(&currentState->animation);
-  animationUpdated(&currentState->animation, currentState->channels);
-  saveAnimationState(&currentState->preferences, buffer, ANIMATION_STATE_LENGTH);
-}
-
-void sendChannel(State* currentState, int index){
-  uint8_t buffer[CHANNEL_STATE_LENGTH];
-  getStateAsBytes(currentState->channels, index, buffer);
-  sendChannelToQueue(buffer);
-}
-
-void readChannel(State* currentState, int index){
-  uint8_t buffer[CHANNEL_STATE_LENGTH];
-  getChannelFromQueue(buffer);
-  setStateFromBytes(currentState->channels, index, buffer);
-  describeState(currentState->channels, index);
-  saveChannelDetailState(&currentState->preferences, index, buffer, CHANNEL_STATE_LENGTH);
-}
-
-void sendChannelPos(State* currentState, int index){
-  uint8_t buffer[MAX_LEDS*3];
-  getChannelLocations(&currentState->location, index, buffer);
-  sendChannelPosToQueue(buffer);
-}
-
-void readChannelPos(State* currentState, int index){
-  uint8_t buffer[MAX_LEDS*3];
-  getChannelPosFromQueue(buffer);
-  setChannelLocations(&currentState->location, index, currentState->channels[index].numLEDs, buffer);
-  saveChannelLocationState(&currentState->preferences, index, buffer, MAX_LEDS*3);
-}
-
-bool handleMessages(State* currentState){
-  int command = getCommandFromQueue(0);
-  std::string state;
-  switch(command){
-    case NO_COMMAND:
-      return false;
-    case DUMMY_COMMAND:
-      return true;
-    case SAVE_COMMAND:
-      saveState(currentState);
-      return true;
-    case RESET_COMMAND:
-      removeAllEntries(&currentState->location);
-      setInitialState(&currentState->location);
-      saveState(currentState);
-      return true;
-    case SEND_SWITCHES:
-      sendSwitches(currentState);
-      return true;
-    case READ_SWITCHES:
-      readSwitches(currentState);
-      return true;
-    case SEND_ANIMATION:
-      sendAnimation(currentState);
-      return true;
-    case READ_ANIMATION:
-      readAnimation(currentState);
-      return true;
-    case SEND_CHANNEL_START...(READ_CHANNEL_START-1):
-      sendChannel(currentState, (command-SEND_CHANNEL_START));
-      return true;
-    case READ_CHANNEL_START...(SEND_CHANNELPOS_START-1):
-      readChannel(currentState, (command-READ_CHANNEL_START));
-      return true;
-    case SEND_CHANNELPOS_START...(READ_CHANNELPOS_START-1):
-      sendChannelPos(currentState, (command-SEND_CHANNELPOS_START));
-      return true;
-    case READ_CHANNELPOS_START...(END_COMMAND-1):
-      readChannelPos(currentState, (command-READ_CHANNELPOS_START));
-      return true;
-    default:
-      return false;
-  }
-}
-
-bool handleSignals(State* currentState){
-  int command = getSignalCommandFromQueue(0);
+bool handleSignals(State* currentState, int command){
   std::string state;
   switch(command){
     case RAMP_UP:
@@ -170,58 +69,77 @@ bool handleSignals(State* currentState){
   }
 }
 
+void saveIfRequired(State* currentState){
+  if(currentState->switches.updated){
+    currentState->switches.updated = false;
+    uint8_t buffer[SWITCH_STATE_LENGTH];
+    getStateAsBytes(&currentState->switches, buffer);
+    saveSwitchState(&currentState->preferences, buffer, SWITCH_STATE_LENGTH);
+  }
+
+  if(currentState->animation.updated){
+    currentState->switches.updated = false;
+    uint8_t buffer[ANIMATION_STATE_LENGTH];
+    getStateAsBytes(&currentState->animation, buffer);
+    saveAnimationState(&currentState->preferences, buffer, ANIMATION_STATE_LENGTH);
+  }
+
+  for(int i=0; i<MAX_CHANNELS; i++){
+    if(currentState->channels[i].updated){
+      currentState->channels[i].updated = false;
+      uint8_t channelBuffer[CHANNEL_STATE_LENGTH];
+      getStateAsBytes(currentState->channels,i, channelBuffer);
+      saveChannelDetailState(&currentState->preferences, i, channelBuffer, CHANNEL_STATE_LENGTH);
+    }
+    if(currentState->location.updated){
+      uint8_t locationArray[MAX_LEDS*3];
+      getChannelLocations(&currentState->location, i, locationArray);
+      saveChannelLocationState(&currentState->preferences, i, locationArray, MAX_LEDS*3);
+    }
+  }
+  currentState->location.updated=false;
+}
+
 bool delayAndPollForUpdate(State* currentState, int wifiConnections, int delay){
+  bool returnValue = false;
+  int signalCommand = 0;
   unsigned long time = millis();
   int webDelay = 0;
   int realDelay = delay;
   if(realDelay < 10){ //TEMP REMOVE WHEN DONE
     realDelay = 10;
   }
+  SwitchState lastSwitchState = currentState->switches;
+  getControllerStatusFromQueue(); //Remove previous active status
+  sendControllerStatusToQueue(INACTIVE); //Set Inactive status while waiting
+  while(millis() < time + realDelay + webDelay || peekRequestStatusFromQueue() == ACTIVE){
+    if(millis() > time + realDelay + webDelay && peekRequestStatusFromQueue() == ACTIVE){
+      //Serial.println("Request Active");
+      webDelay = 500; //Delay an extra second
+      time = millis(); //Reset delay start time to now
+    }
 
-  while(millis() < time + realDelay + webDelay){
-    if(updateSwitchState(&currentState->switches) == true){
-      return true;
+    int tempSignalCommand = getSignalCommandFromQueue();
+    if(tempSignalCommand != NO_SIGNAL){
+      signalCommand = tempSignalCommand;
     }
-    if(webDelay == 0 && handleSignals(currentState)){
-      //stuff here if we got a signal command
-    }
-    if(handleMessages(currentState)){
-      webDelay = 1000;
-      time = millis();
-    }
+
+    /*if(updateSwitchState(&lastSwitchState) == true){
+      //returnValue = true;
+      //break;
+    }*/
+    vTaskDelay(5);
   }
-  return false;
+  getControllerStatusFromQueue();//Remove previous Inactive status
+  sendControllerStatusToQueue(ACTIVE);//Set Active status until we call this function again to wait
+
+  saveIfRequired(currentState);
+
+  handleSignals(currentState, signalCommand);
+
+  return returnValue;
 }
-/*
-void testFunc(State * currentState){
-  Serial.println("***************START OF TESTING SHIT***********************");
-  ChannelState channel;
-  uint8_t loadBuffer[CHANNEL_STATE_LENGTH];
-  loadChannelDetailState(&currentState->preferences, 0, loadBuffer, CHANNEL_STATE_LENGTH);
 
-  Serial.println("Loaded Buffer: ");
-  for(int i=0; i<CHANNEL_STATE_LENGTH;i++){
-    Serial.print(loadBuffer[i]);
-  }
-  Serial.println("END BUFFER");
-
-  setStateFromBytes(&channel, loadBuffer);
-  describeStateSolo(&channel);
-
-  uint8_t readBuffer[CHANNEL_STATE_LENGTH];
-  getStateAsBytes(&channel, readBuffer);
-
-  Serial.println("Read Buffer: ");
-  for(int i=0; i<CHANNEL_STATE_LENGTH;i++){
-    Serial.print(loadBuffer[i]);
-  }
-  Serial.println("END BUFFER");
-
-
-
-  Serial.println("**************************************END OF TESTING SHIT**************************************");
-}
-*/
 void setupBluetooth(State* currentState){
   Serial.println("Bluetooth: Starting Up");
   initializeBluetooth(&currentState->bluetooth);
@@ -252,7 +170,7 @@ void loadSavedIfFound(State* currentState){
     Serial.println("First Run, Using defaults");
     matchedAll = false;
   }else{
-    Serial.println("Checking Saved States...");
+    Serial.println("Checking Saved Switch State...");
     uint8_t switchBuffer[SWITCH_STATE_LENGTH];
     if(loadSwitchState(&currentState->preferences, switchBuffer, SWITCH_STATE_LENGTH)){
       Serial.println("Found Saved Switch State");
@@ -263,6 +181,7 @@ void loadSavedIfFound(State* currentState){
       matchedAll = false;
     }
 
+    Serial.println("Checking Saved Animation State...");
     uint8_t animationBuffer[ANIMATION_STATE_LENGTH];
     if(loadAnimationState(&currentState->preferences, animationBuffer, ANIMATION_STATE_LENGTH) && matchedAll){
       Serial.println("Found Saved Animation State");
@@ -273,6 +192,7 @@ void loadSavedIfFound(State* currentState){
       matchedAll = false;
     }
 
+    Serial.println("Checking Saved Channel/Location States...");
     for(int i=0; i<MAX_CHANNELS; i++){
       uint8_t channelBuffer[CHANNEL_STATE_LENGTH];
       if(loadChannelDetailState(&currentState->preferences, i, channelBuffer, CHANNEL_STATE_LENGTH) && matchedAll){

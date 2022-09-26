@@ -19,6 +19,10 @@ struct SwitchState {
     bool brake;
     bool interior;
     bool uiOverride;
+    //bool headlight;
+    //bool showLights;
+    //Below not used to rebuild state
+    bool updated;
 };
 
 void initializeSwitches(SwitchState* switches);

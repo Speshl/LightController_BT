@@ -2,93 +2,147 @@
 
 void initializeMessageQueue(){
     Serial.println("Building Message Queues");
+    controllerQueue = xQueueCreate( 1, sizeof(int));
+    if(controllerQueue == NULL){
+        Serial.println("Error creating controllerQueue");
+    }
+
+    requestQueue = xQueueCreate( 1, sizeof(int));
+    if(requestQueue == NULL){
+        Serial.println("Error creating requestQueue");
+    }
+
     signalQueue = xQueueCreate( 1, sizeof(int));
     if(signalQueue == NULL){
         Serial.println("Error creating signalQueue");
     }
-
-    commandQueue = xQueueCreate( 1, sizeof(int));
-    if(commandQueue == NULL){
-        Serial.println("Error creating commandQueue");
-    }
-
-    switchQueue = xQueueCreate(1, SWITCH_MESSAGE_LENGTH);
-    if(switchQueue == NULL){
-        Serial.println("Error creating switchQueue");
-    }
-
-    animationQueue = xQueueCreate(1, ANIMATION_MESSAGE_LENGTH);
-    if(animationQueue == NULL){
-        Serial.println("Error creating animationQueue");
-    }
-
-    channelQueue = xQueueCreate(1, CHANNEL_MESSAGE_LENGTH);
-    if(channelQueue == NULL){
-        Serial.println("Error creating channelQueue");
-    }
-
-    channelPosQueue = xQueueCreate(1, CHANNELPOS_MESSAGE_LENGTH);
-    if(channelPosQueue == NULL){
-        Serial.println("Error creating channelPosQueue");
-    }
 }
 
-int getSignalCommandFromQueue(int wait){
+int peekControllerStatusFromQueue(){
     int command;
-    bool found = xQueueReceive(signalQueue, &command, wait);
+    bool found = xQueuePeek(controllerQueue, &command,0);
     if(found){
         return command;
     }else{
-        return NO_COMMAND;
+        return INACTIVE;
     }
 }
 
-void sendSignalCommandToQueue(int command){
-    xQueueSend(signalQueue, &command, portMAX_DELAY);
-}
-
-int getCommandFromQueue(int wait){
+int getControllerStatusFromQueue(){
     int command;
-    bool found = xQueueReceive(commandQueue, &command, wait);
+    bool found = xQueueReceive(controllerQueue, &command, 0);
     if(found){
         return command;
     }else{
-        return NO_COMMAND;
+        return INACTIVE;
+    }
+}
+bool sendControllerStatusToQueue(int command){
+    return xQueueSend(controllerQueue, &command, 0);
+}
+
+int peekRequestStatusFromQueue(){
+    int command;
+    bool found = xQueuePeek(requestQueue, &command ,0);
+    if(found){
+        return command;
+    }else{
+        return INACTIVE;
     }
 }
 
-void sendCommandToQueue(int command){
-    xQueueSend(commandQueue, &command, portMAX_DELAY);
+int getRequestStatusFromQueue(){
+    int command;
+    bool found = xQueueReceive(requestQueue, &command, portMAX_DELAY);
+    if(found){
+        return command;
+    }else{
+        return INACTIVE;
+    }
 }
 
-bool getSwitchFromQueue(uint8_t state[ANIMATION_MESSAGE_LENGTH]){
-    return xQueueReceive(switchQueue, state, portMAX_DELAY);
+bool sendRequestStatusToQueue(int command){
+    return xQueueSend(requestQueue, &command, portMAX_DELAY);
 }
 
-void sendSwitchToQueue(uint8_t state[ANIMATION_MESSAGE_LENGTH]){
-    xQueueSend(switchQueue, state, portMAX_DELAY);
+int getSignalCommandFromQueue(){
+    int command;
+    bool found = xQueueReceive(signalQueue, &command, 0);
+    if(found){
+        return command;
+    }else{
+        return NO_SIGNAL;
+    }
 }
 
-bool getAnimationFromQueue(uint8_t state[ANIMATION_MESSAGE_LENGTH]){
-    return xQueueReceive(animationQueue, state, portMAX_DELAY);
+bool sendSignalCommandToQueue(int command){
+    return xQueueSend(signalQueue, &command, portMAX_DELAY);
 }
 
-void sendAnimationToQueue(uint8_t state[ANIMATION_MESSAGE_LENGTH]){
-    xQueueSend(animationQueue,state, portMAX_DELAY);
+int peekControllerStatusFromQueueFromISR(){
+    int command;
+    bool found = xQueuePeekFromISR(controllerQueue, &command);
+    if(found){
+        return command;
+    }else{
+        return INACTIVE;
+    }
 }
 
-bool getChannelFromQueue(uint8_t state[CHANNEL_MESSAGE_LENGTH]){
-    return xQueueReceive(channelQueue, state, portMAX_DELAY);
+int getControllerStatusFromQueueFromISR(){
+    BaseType_t taskWoke = pdFALSE;
+    int command;
+    bool found = xQueueReceiveFromISR(controllerQueue, &command, &taskWoke);
+    if(found){
+        return command;
+    }else{
+        return INACTIVE;
+    }
+}
+bool sendControllerStatusToQueueFromISR(int command){
+    BaseType_t taskWoke = pdFALSE;
+    return xQueueSendFromISR(controllerQueue, &command, &taskWoke);
 }
 
-void sendChannelToQueue(uint8_t state[CHANNEL_MESSAGE_LENGTH]){
-    xQueueSend(channelQueue, state, portMAX_DELAY);
+int peekRequestStatusFromQueueFromISR(){
+    BaseType_t taskWoke = pdFALSE;
+    int command;
+    bool found = xQueuePeekFromISR(requestQueue, &command);
+    if(found){
+        return command;
+    }else{
+        return INACTIVE;
+    }
 }
 
-bool getChannelPosFromQueue(byte state[CHANNELPOS_MESSAGE_LENGTH]){
-    return xQueueReceive(channelPosQueue, state, portMAX_DELAY);
+int getRequestStatusFromQueueFromISR(){
+    BaseType_t taskWoke = pdFALSE;
+    int command;
+    bool found = xQueueReceiveFromISR(requestQueue, &command, &taskWoke);
+    if(found){
+        return command;
+    }else{
+        return INACTIVE;
+    }
 }
 
-void sendChannelPosToQueue(byte state[CHANNELPOS_MESSAGE_LENGTH]){
-    xQueueSend(channelPosQueue, state, portMAX_DELAY);
+bool sendRequestStatusToQueueFromISR(int command){
+    BaseType_t taskWoke = pdFALSE;
+    return xQueueSendFromISR(requestQueue, &command, &taskWoke);
+}
+
+int getSignalCommandFromQueueFromISR(){
+    BaseType_t taskWoke = pdFALSE;
+    int command;
+    bool found = xQueueReceiveFromISR(signalQueue, &command, &taskWoke);
+    if(found){
+        return command;
+    }else{
+        return NO_SIGNAL;
+    }
+}
+
+bool sendSignalCommandToQueueFromISR(int command){
+    BaseType_t taskWoke = pdFALSE;
+    return xQueueSendFromISR(signalQueue, &command, &taskWoke);
 }

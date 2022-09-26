@@ -31,6 +31,7 @@ struct LocationState {
   LocationEntry * colIndexes[LOCATION_GRID_SIZE];
   LocationEntry * heightIndexes[LOCATION_GRID_SIZE];
   LocationEntry * garbage;
+  bool updated;
 };
 
 //General

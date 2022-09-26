@@ -1,3 +1,6 @@
+#include <Arduino.h>
+
+static const char utils_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
 
@@ -21,3 +24,4 @@
 <button><a href="/export" download="test.json">Export</a></button>
 </body>
 </html>
+%LAST_LINE%)rawliteral";

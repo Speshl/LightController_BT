@@ -22,6 +22,7 @@ struct AnimationState {
   uint8_t fps;
   byte paletteDescription[MAX_COLORS*4];
   //Below not used to rebuild state
+  bool updated;
   CRGBPalette16 palette;
   uint8_t stepIndex;
   uint8_t xPos;
